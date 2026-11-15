@@ -232,6 +232,12 @@ textarea.field{resize:none;height:6rem}
 .nbody time{font-size:.72rem;color:var(--sub)}
 .ncard .go{display:block;margin:.6rem auto 1rem;padding:.7rem 2.2rem;border-radius:18px;background:var(--blue);color:#fff;font-weight:700}
 .foot-note{padding:.9rem 1rem calc(env(safe-area-inset-bottom) + 1rem);text-align:center;color:var(--sub);font-size:.85rem;background:var(--bg2);border-radius:24px 24px 0 0;flex-shrink:0}
+
+/* ===== NOVA AI (ajout isolé) ===== */
+#ai-msgs{flex:1;overflow:auto;padding:1rem .8rem;display:flex;flex-direction:column;gap:.45rem;background:var(--bg)}
+#ai-msgs .bub{user-select:text;-webkit-user-select:text}
+#ai-msgs .ai-hello{margin:auto;text-align:center;color:var(--sub);font-size:.9rem;padding:1rem;line-height:1.5}
+#ai-msgs .ai-hello .av{margin:0 auto .8rem;width:4.2rem;height:4.2rem;background:#0A0F1E;padding:.7rem}
 </style>
 </head>
 <body>
@@ -256,7 +262,7 @@ textarea.field{resize:none;height:6rem}
 
   <!-- DISCUSSIONS -->
   <div class="page" id="discussions">
-    <div class="hd"><h2>Nova</h2><button class="ib" onclick="event.stopPropagation();menuDisc()" data-ic="dots"></button></div>
+    <div class="hd"><h2>Nova</h2><button class="ib" id="ai-open" onclick="ouvrirNovaAI()" data-ic="ai" aria-label="NOVA AI"></button><button class="ib" onclick="event.stopPropagation();menuDisc()" data-ic="dots"></button></div>
     <div class="search"><span data-ic="search" style="display:block;width:1.1rem;height:1.1rem"></span><input id="disc-q" placeholder="Rechercher" oninput="filterRows('conv-list',this.value)" autocomplete="off"></div>
     <div class="scroll" id="conv-list"></div>
   </div>
@@ -293,6 +299,21 @@ textarea.field{resize:none;height:6rem}
     </div>
     <div class="scroll" id="upd-list"></div>
     <div class="foot-note">Seul Nova peut envoyer des messages</div>
+  </div>
+
+  <!-- NOVA AI -->
+  <div class="page" id="nova-ai">
+    <div class="hd">
+      <button class="ib" onclick="goBack()" data-ic="back"></button>
+      <span class="av sm" style="background:#0A0F1E;padding:.35rem;margin-right:.2rem" data-ic="star"></span>
+      <div class="ttl"><b>NOVA AI</b><small id="ai-state">En ligne</small></div>
+      <button class="ib" onclick="aiClear()" data-ic="trash" aria-label="Effacer la conversation"></button>
+    </div>
+    <div id="ai-msgs"></div>
+    <div class="comp">
+      <div class="pill"><textarea id="ai-inp" rows="1" placeholder="Écris à NOVA AI"></textarea></div>
+      <button class="ib send" id="ai-send" onclick="envoyerNovaAI()" data-ic="send"></button>
+    </div>
   </div>
 
   <!-- AJOUT PAR LIEN -->
@@ -555,6 +576,7 @@ users:'<circle cx="9" cy="8" r="3.5"/><path d="M2 20a7 7 0 0114 0M17 5a3.5 3.5 0
 mega:'<path d="M3 11v3l12 5V6zM15 9a4 4 0 010 6"/>',
 device:'<rect x="7" y="2" width="10" height="20" rx="3"/><path d="M11 18h2"/>',
 star:'<path d="M12 3c.6 5 2.6 7.4 8 9-5.4 1.6-7.4 4-8 9-.6-5-2.6-7.4-8-9 5.4-1.6 7.4-4 8-9z"/>',
+ai:'<path d="M10 3l1.9 5.4L17.5 10l-5.6 1.6L10 17l-1.9-5.4L2.5 10l5.6-1.6z"/><path d="M18.5 14l.9 2.6 2.6.9-2.6.9-.9 2.6-.9-2.6-2.6-.9 2.6-.9z"/>',
 gear:'<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/>',
 thumbUp:'<path d="M7 10v10H4a2 2 0 01-2-2v-6a2 2 0 012-2h3z"/><path d="M7 10l5-8a3 3 0 012.7 3.9L14 10h5a2 2 0 012 2l-2 7a2 2 0 01-2 1H7"/>',
 thumbDown:'<path d="M7 14V4H4a2 2 0 00-2 2v6a2 2 0 002 2h3z"/><path d="M7 14l5 8a3 3 0 002.7-3.9L14 14h5a2 2 0 002-2l-2-7a2 2 0 00-2-1H7"/>'
@@ -1536,6 +1558,110 @@ async function envoyerLien(){
   if(navigator.share){try{await navigator.share({title:'Nova',text:me.nom+' sur Nova',url:me.lien})}catch(e){}}
   else copyText(me.lien);
 }
+
+/* ===== NOVA AI (Pollinations) — bloc isolé ===== */
+const NOVA_AI_URL='https://text.pollinations.ai/openai';
+const NOVA_AI_KEY='';   /* optionnel : colle ici une clé Pollinations si ton endpoint l'exige */
+const NOVA_AI_SYSTEM="Tu es NOVA AI, l'assistant intégré à l'application de messagerie Nova. Réponds en français, de façon claire, chaleureuse et concise, sauf si l'utilisateur écrit dans une autre langue.";
+let aiMsgs=[],aiBusy=false,aiLastUser='',aiError='';
+
+function aiLoad(){try{aiMsgs=JSON.parse(LS('nova_ai_hist')||'[]')}catch(e){aiMsgs=[]}if(!Array.isArray(aiMsgs))aiMsgs=[]}
+function aiSave(){LS('nova_ai_hist',JSON.stringify(aiMsgs.slice(-40)))}
+function ouvrirNovaAI(){
+  aiLoad();aiError='';
+  showPage('nova-ai');
+  $('ai-msgs').style.background=bgValue(LS('nova_chatbg')||'nova');
+  aiRender(true);
+}
+function aiRender(scroll){
+  const box=$('ai-msgs');
+  const near=box.scrollHeight-box.scrollTop-box.clientHeight<140;
+  let h='';
+  if(!aiMsgs.length&&!aiBusy){
+    h+='<div class="ai-hello"><div class="av">'+STAR+'</div><b style="color:var(--tx);font-size:1.05rem">NOVA AI</b><br>Pose-moi une question, demande-moi de t\'aider à écrire, à traduire ou à réfléchir.</div>';
+  }
+  aiMsgs.forEach((m,i)=>{
+    const mine=m.r==='u';
+    h+='<div class="row '+(mine?'me':'ot')+'"><div class="bub" data-ai="'+i+'"><span class="tx">'+esc(m.t)+'</span><span class="meta">'+heure(m.d||Date.now())+'</span></div></div>';
+  });
+  if(aiBusy)h+='<div class="row ot" id="ai-typing"><div class="bub dots"><i></i><i></i><i></i></div></div>';
+  if(aiError)h+='<div class="row ot"><div class="st fail" onclick="aiRetry()">'+esc(aiError)+' · Réessayer</div></div>';
+  box.innerHTML=h;
+  if(scroll||near)box.scrollTop=box.scrollHeight;
+  $('ai-state').textContent=aiBusy?'écrit…':'En ligne';
+  $('ai-send').disabled=aiBusy;
+}
+async function envoyerNovaAI(txtForce){
+  if(aiBusy)return;
+  const inp=$('ai-inp');
+  const txt=(typeof txtForce==='string'?txtForce:inp.value).trim();
+  if(!txt)return;
+  if(typeof txtForce!=='string'){inp.value='';inp.style.height='2.6rem'}
+  aiError='';aiLastUser=txt;
+  aiMsgs.push({r:'u',t:txt,d:Date.now()});
+  aiSave();aiBusy=true;aiRender(true);
+  if(!navigator.onLine){aiBusy=false;aiError='Pas de connexion';aiRender(true);return}
+  const ctrl=new AbortController();
+  const to=setTimeout(()=>ctrl.abort(),60000);
+  try{
+    const history=aiMsgs.slice(-12).map(m=>({role:m.r==='u'?'user':'assistant',content:m.t}));
+    const headers={'Content-Type':'application/json'};
+    if(NOVA_AI_KEY)headers['Authorization']='Bearer '+NOVA_AI_KEY;
+    const res=await fetch(NOVA_AI_URL,{method:'POST',headers:headers,signal:ctrl.signal,body:JSON.stringify({model:'openai',messages:[{role:'system',content:NOVA_AI_SYSTEM}].concat(history)})});
+    if(!res.ok)throw new Error('Erreur '+res.status);
+    const j=await res.json();
+    const out=((j.choices&&j.choices[0]&&j.choices[0].message&&j.choices[0].message.content)||'').trim();
+    if(!out)throw new Error('Réponse vide');
+    aiBusy=false;
+    const m={r:'a',t:'',d:Date.now()};
+    aiMsgs.push(m);
+    aiRender(true);
+    await aiType(m,out);
+    aiSave();
+  }catch(e){
+    aiBusy=false;
+    aiError=e&&e.name==='AbortError'?'Délai dépassé':'NOVA AI est indisponible';
+    aiRender(true);
+  }finally{clearTimeout(to)}
+}
+/* animation d'écriture progressive */
+async function aiType(m,full){
+  const box=$('ai-msgs');
+  const bubs=box.querySelectorAll('.bub[data-ai]');
+  const el=bubs[bubs.length-1];
+  const tx=el&&el.querySelector('.tx');
+  $('ai-state').textContent='écrit…';
+  let i=0;
+  while(i<full.length){
+    i=Math.min(full.length,i+3);
+    m.t=full.slice(0,i);
+    if(tx)tx.textContent=m.t;
+    if(box.scrollHeight-box.scrollTop-box.clientHeight<160)box.scrollTop=box.scrollHeight;
+    if(currentPage!=='nova-ai'){m.t=full;break}
+    await sleep(16);
+  }
+  m.t=full;
+  if(tx)tx.textContent=full;
+  $('ai-state').textContent='En ligne';
+}
+function aiRetry(){
+  if(aiBusy||!aiLastUser)return;
+  /* retire le dernier message utilisateur (déjà présent) pour le renvoyer proprement */
+  if(aiMsgs.length&&aiMsgs[aiMsgs.length-1].r==='u')aiMsgs.pop();
+  aiError='';
+  envoyerNovaAI(aiLastUser);
+}
+function aiClear(){
+  if(aiBusy)return;
+  aiMsgs=[];aiError='';aiSave();aiRender(true);toast('Conversation effacée');
+}
+$('ai-inp').addEventListener('input',function(){
+  this.style.height='2.6rem';
+  this.style.height=Math.min(this.scrollHeight,112)+'px';
+});
+$('ai-inp').addEventListener('keydown',e=>{
+  if(e.key==='Enter'&&!e.shiftKey&&window.innerWidth>700){e.preventDefault();envoyerNovaAI()}
+});
 
 /* ===== TEMPS RÉEL ===== */
 function subscribe(){
