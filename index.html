@@ -33,7 +33,7 @@ svg{display:block;width:1.4rem;height:1.4rem}
 .av svg{width:68%;height:68%}
 .bdg{width:16px;height:16px!important;display:inline-block;vertical-align:-3px;margin-left:4px;flex-shrink:0}
 
-/* LIGNES */
+/* LIGNES : ICÔNES BLANCHES + PLUS D'ESPACE */
 .ico{width:24px;height:24px;flex-shrink:0;color:var(--tx)}
 .ico svg{width:24px;height:24px}
 .item{display:flex;align-items:center;gap:16px;padding:20px 16px;margin-bottom:22px;background:var(--card);border-radius:18px;cursor:pointer;transition:transform .15s}
@@ -86,14 +86,14 @@ textarea.field{resize:none;height:6rem}
 .photo-pick img{width:100%;height:100%;object-fit:cover}
 .photo-pick svg{width:2.4rem;height:2.4rem}
 
-/* BARRE DU BAS */
+/* BARRE DU BAS : DISCUSSION / STATUT */
 #nav{position:fixed;left:.8rem;right:.8rem;bottom:calc(env(safe-area-inset-bottom) + .6rem);height:4.6rem;background:var(--card);border-radius:30px;display:none;justify-content:space-around;align-items:center;z-index:20;box-shadow:0 8px 30px rgba(0,0,0,.5)}
 #nav button{width:7rem;height:3.7rem;border-radius:22px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;position:relative;color:var(--tx);opacity:.65;transition:.2s}
-#nav button .ni{display:block;width:22px;height:22px}
-#nav button .ni svg{width:22px;height:22px}
+#nav button .ni{display:block;width:26px;height:26px}
+#nav button .ni svg{width:26px;height:26px}
 #nav button em{font-style:normal;font-size:.68rem;font-weight:600}
 #nav button.act{opacity:1;background:rgba(96,165,250,.28)}
-#dot{position:absolute;top:.2rem;right:1rem;min-width:1.25rem;height:1.25rem;border-radius:1rem;background:#60A5FA;color:#05070D;border:2px solid var(--card);display:none;align-items:center;justify-content:center;padding:0 .25rem;font-size:.65rem;font-weight:800}
+#dot{position:absolute;top:.35rem;right:1.7rem;width:.7rem;height:.7rem;border-radius:50%;background:#60A5FA;border:2px solid var(--card);display:none}
 .conv{display:flex;align-items:center;gap:14px;padding:14px 12px;margin-bottom:14px;background:var(--card);border-radius:20px;cursor:pointer}
 .conv .mid{flex:1;min-width:0;text-align:left}
 .conv .mid b{display:flex;align-items:center;font-weight:700}
@@ -226,26 +226,18 @@ textarea.field{resize:none;height:6rem}
 .play svg{width:1.6rem;height:1.6rem;margin-left:3px}
 .nimg small{position:absolute;left:12px;bottom:10px;color:#fff;font-size:.75rem;background:rgba(0,0,0,.45);padding:.15rem .5rem;border-radius:10px}
 .nbody{padding:1rem 1rem .4rem;display:flex;gap:.8rem}
-.nbody .t{flex:1;text-align:left;min-width:0}
+.nbody .t{flex:1;text-align:left}
 .nbody .t b{display:block;margin-bottom:.3rem}
-.nbody .t p{margin:0;color:var(--sub);font-size:.88rem;line-height:1.45;white-space:pre-wrap;overflow-wrap:anywhere}
+.nbody .t p{margin:0;color:var(--sub);font-size:.88rem;line-height:1.45}
 .nbody time{font-size:.72rem;color:var(--sub)}
 .ncard .go{display:block;margin:.6rem auto 1rem;padding:.7rem 2.2rem;border-radius:18px;background:var(--blue);color:#fff;font-weight:700}
 .foot-note{padding:.9rem 1rem calc(env(safe-area-inset-bottom) + 1rem);text-align:center;color:var(--sub);font-size:.85rem;background:var(--bg2);border-radius:24px 24px 0 0;flex-shrink:0}
 
-/* NOVA AI */
+/* ===== NOVA AI (ajout isolé) ===== */
 #ai-msgs{flex:1;overflow:auto;padding:1rem .8rem;display:flex;flex-direction:column;gap:.45rem;background:var(--bg)}
 #ai-msgs .bub{user-select:text;-webkit-user-select:text}
 #ai-msgs .ai-hello{margin:auto;text-align:center;color:var(--sub);font-size:.9rem;padding:1rem;line-height:1.5}
 #ai-msgs .ai-hello .av{margin:0 auto .8rem;width:4.2rem;height:4.2rem;background:#0A0F1E;padding:.7rem}
-#ai-msgs .ai-image{display:block;max-width:100%;max-height:380px;object-fit:contain;border-radius:15px;margin:0 0 .5rem}
-#ai-msgs .ai-table-wrap{max-width:100%;overflow-x:auto;margin:.5rem 0;border-radius:10px;border:1px solid var(--line)}
-#ai-msgs table{border-collapse:collapse;min-width:100%;font-size:.82rem;white-space:normal}
-#ai-msgs th,#ai-msgs td{padding:.55rem .7rem;border:1px solid var(--line);text-align:left;vertical-align:top}
-#ai-msgs th{background:rgba(96,165,250,.18);font-weight:700}
-#ai-msgs td{background:rgba(127,127,127,.06)}
-#ai-msgs .tx{line-height:1.5;overflow-wrap:anywhere}
-#ai-msgs .ai-code{display:block;white-space:pre-wrap;background:#05070D;padding:.7rem;border-radius:10px;font-family:monospace;font-size:.82rem;overflow-x:auto}
 </style>
 </head>
 <body>
@@ -514,9 +506,10 @@ textarea.field{resize:none;height:6rem}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="update.official.js" onerror="void 0"></script>
 <script>
-/* ===== PROJET SUPABASE DE LA MESSAGERIE ===== */
-const SUPABASE_URL = "https://casmvccycoznwnuqlbca.supabase.co";
-const SUPABASE_KEY = "sb_publishable_ZrAyqx41Yjw2eiFD0ByflA_tufI2FLp";
+/* ===== NOUVEAU PROJET SUPABASE ===== */
+const SUPABASE_URL = "https://nqtychmsamftwiwwphis.supabase.co";
+/* >>> COLLE ICI la clé "publishable" du NOUVEAU projet (Settings > API Keys). Jamais la clé service_role. <<< */
+const SUPABASE_KEY = "COLLE_ICI_LA_CLE_PUBLISHABLE_DU_NOUVEAU_PROJET";
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {auth:{persistSession:true,autoRefreshToken:true}});
 const KEY_MISSING = SUPABASE_KEY.indexOf('COLLE_ICI')===0;
 
@@ -535,8 +528,6 @@ let me=null,cur=null,msgs=[],replyTo=null,editing=null,stack=[],currentPage='spl
  regPhoto=null,editPhoto=null,stMode='photo',stPhoto=null,stBg=0,groups={},friendOrder=[],svTimer=null,svA=null,svI=0,
  foundUser=null,delTarget=null,bgPending=null,bgGal=null,realtimeReady=false,lastSig='',
  convByUser={},convOwner={},blockedSet=new Set(),blockedMeSet=new Set(),rtTimer=null;
-
-const LOCAL_SELF_CONV='local:self';
 
 /* ===== CHARGEMENT GLOBAL ===== */
 let loaderCount=0;
@@ -596,7 +587,7 @@ thumbDown:'<path d="M7 14V4H4a2 2 0 00-2 2v6a2 2 0 002 2h3z"/><path d="M7 14l5 8
 };
 
 const STAR='<svg viewBox="0 0 100 100"><g stroke="#8B5CF6" stroke-width="2" stroke-linecap="round" opacity=".55"><path d="M50 3v6M50 91v6M3 50h6M91 50h6M17 17l4 4M79 79l4 4M83 17l-4 4M21 79l-4 4"/></g><path d="M50 12C54 38 62 46 88 50 62 54 54 62 50 88 46 62 38 54 12 50 38 46 46 38 50 12Z" fill="#FFFFFF"/></svg>';
-const BADGE='<svg class="bdg" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg" aria-label="Compte vérifié"><path d="M10 0.8L12.1 2.3L14.7 1.7L15.5 4.2L18 5.2L17.5 7.8L19.2 10L17.5 12.2L18 14.8L15.5 15.8L14.7 18.3L12.1 17.7L10 19.2L7.9 17.7L5.3 18.3L4.5 15.8L2 14.8L2.5 12.2L0.8 10L2.5 7.8L2 5.2L4.5 4.2L5.3 1.7L7.9 2.3Z" fill="#22C55E"/><path d="M5.5 10.2L8.3 13L14.6 6.8" fill="none" stroke="#FFFFFF" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+const BADGE='<svg class="bdg" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg" aria-label="Compte vérifié"><path d="M10 0.8L12.1 2.3L14.7 1.7L15.5 4.2L18 5.2L17.5 7.8L19.2 10L17.5 12.2L18 14.8L15.5 15.8L14.7 18.3L12.1 17.7L10 19.2L7.9 17.7L5.3 18.3L4.5 15.8L2 14.8L2.5 12.2L0.8 10L2.5 7.8L2 5.2L4.5 4.2L5.3 1.7L7.9 2.3Z" fill="#3B82F6"/><path d="M5.5 10.2L8.3 13L14.6 6.8" fill="none" stroke="#FFFFFF" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
 const icon=(n,w)=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${w||1.9}" stroke-linecap="round" stroke-linejoin="round">${IC[n]||''}</svg>`;
 
@@ -700,7 +691,7 @@ function applyContraste(){
 }
 function toggleContraste(){LS('nova_hc',LS('nova_hc')==='1'?'0':'1');applyContraste()}
 
-/* images de fond */
+/* images de fond (guillemets simples : compatibles avec style="...") */
 const svgURI=s=>"url('data:image/svg+xml,"+encodeURIComponent(s)+"')";
 const S=(inner,w,h,op,col)=>`<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}"><g fill="none" stroke="${col||'#fff'}" stroke-opacity="${op||.1}" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">${inner}</g></svg>`;
 const P=(svg,bg)=>()=>svgURI(svg)+','+bg;
@@ -762,7 +753,7 @@ function showPage(id,back){
 }
 function goBack(){if(currentPage==='chat')cur=null;showPage(stack.pop()||'discussions',true)}
 
-/* ===== OUTILS BACKEND ===== */
+/* ===== OUTILS BACKEND NOUVEAU SCHÉMA ===== */
 const P2U=p=>{
   if(!p)return null;
   const id=p.id||p.profile_id||p.user_id;
@@ -776,12 +767,14 @@ function dataUrlToBlob(d){
   for(let i=0;i<b.length;i++)u[i]=b.charCodeAt(i);
   return new Blob([u],{type:mime});
 }
+/* envoie une image Base64 vers un bucket Storage et retourne son URL publique */
 async function uploadImage(bucket,dataUrl,uid,name){
   const path=uid+'/'+name+'-'+Date.now()+'.jpg';
   const r=await supabaseClient.storage.from(bucket).upload(path,dataUrlToBlob(dataUrl),{contentType:'image/jpeg',upsert:true});
   if(r.error)throw r.error;
   return supabaseClient.storage.from(bucket).getPublicUrl(path).data.publicUrl;
 }
+/* appelle une fonction SQL en essayant plusieurs noms de paramètres courants */
 async function rpcTry(name,variants){
   let last=null;
   for(const args of variants){
@@ -798,41 +791,17 @@ async function findProfileByCode(code){
   let d=r.data;if(Array.isArray(d))d=d[0];
   let u=P2U(d);
   if(!u){
+    /* repli : lecture directe de profiles (soumise aux règles RLS) */
     const q=await supabaseClient.from('profiles').select('id,display_name,photo_url,public_link_code').eq('public_link_code',code).maybeSingle();
     u=q.data?P2U(q.data):null;
   }
   return u;
-}
-
-/* ===== MES NOTES : STOCKAGE LOCAL DE SECOURS ===== */
-function loadLocalNotes(){
-  try{
-    const a=JSON.parse(LS('nova_local_notes')||'[]');
-    return Array.isArray(a)?a:[];
-  }catch(e){return[]}
-}
-function saveLocalNotes(list){
-  try{
-    LS('nova_local_notes',JSON.stringify(list.slice(-500)));
-    return true;
-  }catch(e){
-    toast('Stockage des notes saturé. Certaines images sont peut-être trop volumineuses.');
-    return false;
-  }
 }
 async function ensureConv(uid){
   uid=String(uid);
   if(convByUser[uid])return convByUser[uid];
   await computeInbox();
   if(convByUser[uid])return convByUser[uid];
-
-  /* Si le backend ne permet pas une conversation avec soi-même,
-     Nova utilise automatiquement un carnet local privé. */
-  if(me&&uid===String(me.id)){
-    convByUser[uid]=LOCAL_SELF_CONV;
-    return LOCAL_SELF_CONV;
-  }
-
   const r=await rpcTry('nova_create_direct_conversation',[{other_user_id:uid},{p_other_user_id:uid},{target_user_id:uid},{p_target_user_id:uid},{other_id:uid},{p_other_id:uid},{user_id:uid},{p_user_id:uid},{recipient_id:uid},{peer_id:uid},{other_profile_id:uid},{p_other_profile_id:uid}]);
   if(r.error)throw r.error;
   let d=r.data;if(Array.isArray(d))d=d[0];
@@ -842,7 +811,7 @@ async function ensureConv(uid){
   return convByUser[uid];
 }
 
-/* ===== INSCRIPTION ===== */
+/* ===== INSCRIPTION (Supabase Auth anonyme + profiles) ===== */
 $('reg-file').onchange=async e=>{
   const f=e.target.files[0];if(!f)return;
   regPhoto=await lirePhoto(f,400);
@@ -996,21 +965,15 @@ const officialCount=()=>{
   const i=UPDATES.findIndex(u=>u.version===s);
   return UPDATES.length-(i+1);
 };
-function setDot(){
-  const n=unreadN+officialCount();
-  const e=$('dot');
-  e.textContent=n>99?'99+':String(n);
-  e.style.display=n>0?'flex':'none';
-}
+function setDot(){$('dot').style.display=(unreadN>0||officialUnread())?'block':'none'}
 
-/* messages normalisés */
+/* messages normalisés depuis le nouveau schéma */
 function normMsg(r){
   const img=r.message_type==='image';
   let txt=r.content||'',photo=null;
   if(img){const i=txt.indexOf('\n');photo=i<0?txt:txt.slice(0,i);txt=i<0?'':txt.slice(i+1)}
   return{id:r.id,conv:r.conversation_id,expediteur_id:r.sender_id,texte:txt,photo:photo,date_envoi:r.created_at,modifie:!!r.edited_at,statut:'envoye',reaction:null,bloque:false};
 }
-
 /* calcule conversations, derniers messages et non-lus */
 async function computeInbox(){
   const map={};
@@ -1065,29 +1028,19 @@ async function chargerDiscussions(){
   contactIds().filter(c=>String(c)!==String(me.id)).forEach(c=>{map[c]=map[c]||{last:null,unread:0}});
   const ids=Object.keys(map).filter(k=>k!==String(me.id));
   const users=await getUsers(ids);
-
-  /* Les discussions non lues passent avant les autres.
-     À égalité, la plus récente reste en premier. */
-  users.sort((a,b)=>{
-    const A=map[String(a.id)]||{unread:0,last:null};
-    const B=map[String(b.id)]||{unread:0,last:null};
-    const unreadDiff=Number(B.unread>0)-Number(A.unread>0);
-    if(unreadDiff)return unreadDiff;
-    return new Date((B.last||{}).date_envoi||0)-new Date((A.last||{}).date_envoi||0);
-  });
-
+  users.sort((a,b)=>new Date((map[String(b.id)].last||{}).date_envoi||0)-new Date((map[String(a.id)].last||{}).date_envoi||0));
   const lu=UPDATES[UPDATES.length-1]||{};
   let h=`<div class="conv srow" onclick="ouvrirMonChat()">${av(myU())}<div class="mid"><b>Mes notes ${badgeSet.has(String(me.id))?BADGE:''}</b><span>Conversation avec moi-même</span></div><div class="rt"><small>Personnel</small></div></div>`;
   h+=`<div class="conv srow" onclick="ouvrirNova()">${novaAv()}<div class="mid"><b>Nova ${BADGE}</b><span>${esc(lu.titre||'Compte officiel de Nova')}</span></div><div class="rt"><small>${esc(lu.date||'')}</small>${officialUnread()?'<i class="pt"></i>':''}</div></div>`;
   users.forEach(u=>{
-    const x=map[String(u.id)]||{last:null,unread:0};
+    const x=map[String(u.id)];
     let pv='',tm='';
     if(x.last){
       const tx=parseTexte(x.last.texte).text;
       pv=(x.last.photo&&!tx)?'📷 Photo':tx;
       tm=quand(x.last.date_envoi);
     }
-    h+=`<div class="conv srow" onclick="ouvrirChat('${esc(u.id)}')">${av(u)}<div class="mid"><b>${nameHtml(u)}</b><span>${esc(pv)}</span></div><div class="rt"><small>${tm}</small>${x.unread?`<span class="cnt">${x.unread>99?'99+':x.unread}</span>`:''}</div></div>`;
+    h+=`<div class="conv srow" onclick="ouvrirChat('${esc(u.id)}')">${av(u)}<div class="mid"><b>${nameHtml(u)}</b><span>${esc(pv)}</span></div><div class="rt"><small>${tm}</small>${x.unread?'<i class="pt"></i>':''}</div></div>`;
   });
   $('conv-list').innerHTML=h;
   filterRows('conv-list',$('disc-q').value);
@@ -1113,7 +1066,7 @@ function renderNova(){
 function openAjout(){showPage('p-add')}
 function playUpd(i){
   const u=[...UPDATES].reverse()[i];
-  openSheet(`<h3>${esc(u.titre)}</h3><p style="line-height:1.55;white-space:pre-wrap">${esc(u.texte)}</p><button class="btn" onclick="closeSheet()">Fermer</button>`);
+  openSheet(`<h3>${esc(u.titre)}</h3><p style="line-height:1.55">${esc(u.texte)}</p><button class="btn" onclick="closeSheet()">Fermer</button>`);
 }
 function ouvrirNova(){showPage('nova')}
 function menuNova(){openPop([{ic:'info',l:'En savoir plus',f:()=>showPage('p-plus')}])}
@@ -1124,21 +1077,20 @@ function parseTexte(raw){
   return m?{reply:m[1],text:m[2]}:{reply:null,text:String(raw||'')};
 }
 const isTmp=m=>String(m.id).startsWith('tmp');
-const findMsg=id=>msgs.find(m=>String(m.id)===String(id));
-
 function statHtml(m){
   if(m.statut==='echec')return `<div class="st fail" onclick="retryMessage('${esc(m.id)}')">Échec d'envoi</div>`;
   if(isTmp(m))return '<div class="st">Envoi…</div>';
   if(m.statut==='lu')return '<div class="st lu">Lu</div>';
   return '<div class="st">Envoyé</div>';
 }
+const findMsg=id=>msgs.find(m=>String(m.id)===String(id));
 
 async function ouvrirChat(id){
   const arr=await getUsers([String(id)]);
   const u=arr[0];
   if(!u){toast('Profil introuvable');return}
   try{await ensureConv(u.id)}
-  catch(e){toast('Conversation impossible : '+(e.message||e));return}
+  catch(e){toast(String(u.id)===String(me.id)?'Notes personnelles non prises en charge par le backend':'Conversation impossible : '+(e.message||e));return}
   cur=u;addContact(u.id);replyTo=null;editing=null;msgs=[];lastSig='';
   $('reply-bar').style.display='none';
   $('inp').value='';$('inp').style.height='2.6rem';
@@ -1155,17 +1107,6 @@ async function chargerMessages(scroll){
   if(!cur)return;
   const conv=convByUser[String(cur.id)];
   if(!conv)return;
-
-  /* Carnet local : ne dépend pas des tables de conversations Supabase. */
-  if(conv===LOCAL_SELF_CONV){
-    msgs=loadLocalNotes().map(m=>({...m,conv:LOCAL_SELF_CONV,statut:m.statut||'envoye'}));
-    blockedByMe=false;blockedByOther=false;
-    $('blk-bar').style.display='none';
-    $('comp').style.display='flex';
-    renderMessages(scroll);
-    return;
-  }
-
   const curId=String(cur.id);
   let r=await supabaseClient.from('messages')
     .select('id,conversation_id,sender_id,content,message_type,created_at,edited_at,message_reactions(user_id,emoji,created_at),message_reads(user_id)')
@@ -1259,7 +1200,7 @@ function menuMessage(id){
   openSheet(h);
 }
 
-/* ENVOI */
+/* ENVOI : Envoi… → Envoyé → Lu, ou Échec d'envoi */
 async function envoyerMessage(photo){
   const inp=$('inp');
   const txt=inp.value.trim();
@@ -1284,21 +1225,6 @@ async function envoyerMessage(photo){
   pushMsg(tmp);
 }
 async function pushMsg(tmp){
-  /* Les notes locales fonctionnent même sans connexion. */
-  if(tmp.conv===LOCAL_SELF_CONV){
-    const idx=msgs.indexOf(tmp);
-    tmp.id='note-'+Date.now()+'-'+Math.floor(Math.random()*9999);
-    tmp.statut='envoye';
-    tmp.date_envoi=tmp.date_envoi||new Date().toISOString();
-    const list=loadLocalNotes();
-    list.push({...tmp});
-    saveLocalNotes(list);
-    if(idx>-1)msgs[idx]=tmp;
-    else msgs.push(tmp);
-    renderMessages(true);
-    return;
-  }
-
   if(!navigator.onLine){tmp.statut='echec';renderMessages(true);return}
   tmp.statut='envoi';
   renderMessages();
@@ -1327,7 +1253,7 @@ function retryMessage(id){
 window.addEventListener('online',()=>{msgs.filter(m=>isTmp(m)&&m.statut==='echec').forEach(pushMsg)});
 
 async function marquerLu(){
-  if(!cur||convByUser[String(cur.id)]===LOCAL_SELF_CONV)return;
+  if(!cur)return;
   const inc=msgs.filter(m=>!isTmp(m)&&String(m.expediteur_id)===String(cur.id)&&m.statut!=='lu');
   if(!inc.length)return;
   const r=await supabaseClient.from('message_reads').upsert(inc.map(m=>({message_id:m.id,user_id:me.id})),{onConflict:'message_id,user_id',ignoreDuplicates:true});
@@ -1344,21 +1270,12 @@ async function modifierMessage(id,nouveau,go){
     const tx=parseTexte(m.texte).text;
     editing=id;
     $('inp').value=tx;$('inp').focus();
-    $('reply-txt').textContent='Modification : '+tx;
+    $('reply-txt').textContent='✏️ '+tx;
     $('reply-bar').style.display='flex';
     return;
   }
   const p=parseTexte(m.texte);
   const full=(p.reply?'⟦r:'+p.reply+'⟧':'')+nouveau;
-
-  if(m.conv===LOCAL_SELF_CONV){
-    m.texte=full;m.modifie=true;
-    saveLocalNotes(msgs.filter(x=>x.conv===LOCAL_SELF_CONV));
-    renderMessages();
-    toast('Note modifiée');
-    return;
-  }
-
   const content=m.photo?(m.photo+(full?'\n'+full:'')):full;
   const r=await supabaseClient.from('messages').update({content:content,edited_at:new Date().toISOString()}).eq('id',id);
   if(r.error)toast(r.error.message);
@@ -1370,7 +1287,7 @@ function copierMessage(id){
   if(m)copyText(parseTexte(m.texte).text);
 }
 
-/* PARTAGER */
+/* PARTAGER : amis Nova ou autres applications */
 async function ouvrirPartage(id){
   const ids=contactIds().filter(c=>!cur||String(c)!==String(cur.id)).concat(cur&&String(cur.id)!==String(me.id)?[String(cur.id)]:[]);
   const users=await getUsers(ids);
@@ -1387,10 +1304,8 @@ async function partagerMessage(){
   for(const d of ids){
     try{
       const conv=await ensureConv(d);
-      let photoUrl=m.photo;
-      if(photoUrl&&photoUrl.startsWith('data:'))photoUrl=await uploadImage('nova-chat',photoUrl,me.id,'shared');
-      const row=photoUrl
-        ?{conversation_id:conv,sender_id:me.id,content:photoUrl+(tx?'\n'+tx:''),message_type:'image'}
+      const row=m.photo
+        ?{conversation_id:conv,sender_id:me.id,content:m.photo+(tx?'\n'+tx:''),message_type:'image'}
         :{conversation_id:conv,sender_id:me.id,content:tx,message_type:'text'};
       const r=await supabaseClient.from('messages').insert(row);
       if(r.error)err=r.error;
@@ -1409,17 +1324,11 @@ async function partagerAutres(){
   else copyText(tx);
 }
 
-/* RÉACTIONS */
+/* RÉACTIONS (table message_reactions, visibles aussi chez l'ami) */
 async function reagirMessage(id,emoji){
   closeSheet();
   const m=findMsg(id);
   if(!m)return;
-  if(m.conv===LOCAL_SELF_CONV){
-    m.reaction=m.reaction===emoji?null:emoji;
-    saveLocalNotes(msgs.filter(x=>x.conv===LOCAL_SELF_CONV));
-    renderMessages();
-    return;
-  }
   const mineRx=(m._rx||[]).find(x=>String(x.user_id)===String(me.id));
   let r;
   if(mineRx&&mineRx.emoji===emoji)r=await supabaseClient.from('message_reactions').delete().eq('message_id',id).eq('user_id',me.id);
@@ -1433,7 +1342,7 @@ function repondreMessage(id){
   if(!m)return;
   const tx=parseTexte(m.texte).text;
   replyTo={id:id,text:tx||'📷 Photo'};
-  $('reply-txt').textContent='Réponse à : '+replyTo.text;
+  $('reply-txt').textContent='↩ '+replyTo.text;
   $('reply-bar').style.display='flex';
   $('inp').focus();
 }
@@ -1490,7 +1399,7 @@ async function deBloquerUtilisateur(){
   await chargerMessages();
 }
 
-/* ===== STATUTS ===== */
+/* ===== STATUTS (statuses / status_views / nova_status_feed) ===== */
 const BGS=[
   'linear-gradient(135deg,#1A3A6B,#05070D)',
   'linear-gradient(135deg,#101A2E,#000000)',
@@ -1536,6 +1445,7 @@ async function fetchFeed(){
   }
   return list;
 }
+/* fond d'une carte de statut (guillemets simples pour ne pas casser style="...") */
 function statutBg(s){
   if(s.photo)return `background-image:linear-gradient(transparent,rgba(0,0,0,.2)),url('${esc(s.photo)}')`;
   const n=parseInt((s.legende||'bg:0').replace('bg:',''));
@@ -1690,6 +1600,7 @@ async function reagirStatut(id,e){
   toast('Réaction envoyée');
   voirStatut(svA,svI);
 }
+/* QUI A CONSULTÉ LE STATUT */
 async function listeVues(){
   clearTimeout(svTimer);
   const s=groups[svA][svI];
@@ -1741,23 +1652,12 @@ async function sauverProfil(){
       if(r.error)throw r.error;
       return url;
     },350);
-
     me.nom=nom;
     if(newPhoto)me.photo=newPhoto;
-    me.bio=bio;
-    LS('nova_user_bio',bio);
+    me.bio=bio;LS('nova_user_bio',bio);
     userCache[String(me.id)]=myU();
-
-    /* Actualisation immédiate de toutes les zones du profil. */
-    $('pe-av').innerHTML=av(myU(),'big');
-    $('pe-link').textContent=me.lien;
-    renderSettings();
-
-    if(cur&&String(cur.id)===String(me.id)){
-      $('ch-av').innerHTML=av(myU(),'sm');
-      $('ch-name').textContent='Mes notes';
-    }
     toast('Profil enregistré');
+    renderSettings();
   }catch(e){toast('Erreur : '+(e.message||e))}
   finally{b.disabled=false}
 }
@@ -1806,13 +1706,13 @@ async function execSuppr(mode){
   await chargerDiscussions();
 }
 
-/* ===== BADGE ===== */
+/* ===== BADGE (table nova_badges) ===== */
 async function renderBadge(){
   const has=badgeSet.has(String(me.id));
   $('bd-big').innerHTML='<span style="display:inline-block;transform:scale(3)">'+BADGE+'</span>';
   $('bd-msg').textContent='';
   $('bd-state').textContent=has?'Badge vérifié actif':'Aucun badge pour le moment';
-  $('bd-info').textContent='Le badge vérifié vert est limité à 5 comptes utilisateurs.';
+  $('bd-info').textContent='Le badge vérifié bleu est limité à 5 comptes utilisateurs.';
   $('bd-btn').style.display=has?'none':'block';
   $('bd-rm').style.display=has?'block':'none';
   const c=await supabaseClient.from('nova_badges').select('user_id',{count:'exact',head:true});
@@ -1856,90 +1756,30 @@ async function envoyerLien(){
   if(navigator.share){try{await navigator.share({title:'Nova',text:me.nom+' sur Nova',url:me.lien})}catch(e){}}
   else copyText(me.lien);
 }
-
-/* ===== NOVA AI : EDGE FUNCTION SUPABASE + OPENROUTER IMAGES ===== */
-const NOVA_AI_SUPABASE_URL='https://nqtychmsamftwiwwphis.supabase.co';
-const NOVA_AI_SUPABASE_KEY=''; 
-const NOVA_AI_URL=NOVA_AI_SUPABASE_URL+'/functions/v1/nova-ai';
-
-const NOVA_AI_SYSTEM="Tu es NOVA AI, l'assistant intégré à l'application de messagerie Nova. Tu réponds naturellement, clairement et utilement. Tu utilises le français si l'utilisateur écrit en français. Tu peux expliquer, rédiger, traduire, analyser et aider sur différents sujets. Utilise des tableaux Markdown lorsque cela rend la réponse plus claire.";
-
+/* ===== NOVA AI (Pollinations) — bloc isolé, inchangé ===== */
+const NOVA_AI_URL='https://text.pollinations.ai/openai';
+const NOVA_AI_KEY='';   /* optionnel : colle ici une clé Pollinations si ton endpoint l'exige */
+const NOVA_AI_SYSTEM="Tu es NOVA AI, l'assistant intégré à l'application de messagerie Nova. Réponds en français, de façon claire, chaleureuse et concise, sauf si l'utilisateur écrit dans une autre langue.";
 let aiMsgs=[],aiBusy=false,aiLastUser='',aiError='';
 
-function aiLoad(){
-  try{aiMsgs=JSON.parse(LS('nova_ai_hist')||'[]')}catch(e){aiMsgs=[]}
-  if(!Array.isArray(aiMsgs))aiMsgs=[];
-}
-function aiSave(){
-  /* Les images Base64 ne sont pas copiées dans localStorage pour éviter
-     de saturer le stockage du téléphone. Les textes restent mémorisés. */
-  const safe=aiMsgs.slice(-40).map(m=>({
-    r:m.r,t:m.t,d:m.d,
-    img:m.img&&!m.img.startsWith('data:')?m.img:null
-  }));
-  LS('nova_ai_hist',JSON.stringify(safe));
-}
+function aiLoad(){try{aiMsgs=JSON.parse(LS('nova_ai_hist')||'[]')}catch(e){aiMsgs=[]}if(!Array.isArray(aiMsgs))aiMsgs=[]}
+function aiSave(){LS('nova_ai_hist',JSON.stringify(aiMsgs.slice(-40)))}
 function ouvrirNovaAI(){
   aiLoad();aiError='';
   showPage('nova-ai');
   $('ai-msgs').style.background=bgValue(LS('nova_chatbg')||'nova');
   aiRender(true);
 }
-
-/* Convertit du Markdown simple en HTML sûr et affiche les tableaux. */
-function aiCells(line){
-  return line.trim().replace(/^\|/,'').replace(/\|$/,'').split('|').map(x=>x.trim());
-}
-function aiIsTableSeparator(line){
-  return /^\s*\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)+\|?\s*$/.test(line);
-}
-function aiInline(text){
-  let s=esc(text);
-  s=s.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
-  s=s.replace(/`([^`]+)`/g,'<code>$1</code>');
-  s=s.replace(/\*(.+?)\*/g,'<em>$1</em>');
-  return s;
-}
-function aiFormatText(raw){
-  const lines=String(raw||'').replace(/\r/g,'').split('\n');
-  let out='';
-  for(let i=0;i<lines.length;i++){
-    const line=lines[i];
-    if(line.includes('|')&&i+1<lines.length&&aiIsTableSeparator(lines[i+1])){
-      const headers=aiCells(line);
-      i+=2;
-      const rows=[];
-      while(i<lines.length&&lines[i].includes('|')&&lines[i].trim()){
-        rows.push(aiCells(lines[i]));
-        i++;
-      }
-      i--;
-      out+='<div class="ai-table-wrap"><table><thead><tr>'+
-        headers.map(c=>'<th>'+aiInline(c)+'</th>').join('')+
-        '</tr></thead><tbody>'+
-        rows.map(row=>'<tr>'+headers.map((_,j)=>'<td>'+aiInline(row[j]||'')+'</td>').join('')+'</tr>').join('')+
-        '</tbody></table></div>';
-    }else if(line.trim()){
-      out+=aiInline(line)+'<br>';
-    }else{
-      out+='<br>';
-    }
-  }
-  return out;
-}
 function aiRender(scroll){
   const box=$('ai-msgs');
   const near=box.scrollHeight-box.scrollTop-box.clientHeight<140;
   let h='';
   if(!aiMsgs.length&&!aiBusy){
-    h+='<div class="ai-hello"><div class="av">'+STAR+'</div><b style="color:var(--tx);font-size:1.05rem">NOVA AI</b><br>Pose-moi une question, demande-moi de t’aider à écrire, à traduire, à réfléchir ou à créer une image.</div>';
+    h+='<div class="ai-hello"><div class="av">'+STAR+'</div><b style="color:var(--tx);font-size:1.05rem">NOVA AI</b><br>Pose-moi une question, demande-moi de t\'aider à écrire, à traduire ou à réfléchir.</div>';
   }
   aiMsgs.forEach((m,i)=>{
     const mine=m.r==='u';
-    h+='<div class="row '+(mine?'me':'ot')+'"><div class="bub" data-ai="'+i+'">';
-    if(m.img)h+='<img class="ai-image" src="'+esc(m.img)+'" alt="Image générée par NOVA AI">';
-    if(m.t)h+='<span class="tx">'+(mine?esc(m.t).replace(/\n/g,'<br>'):aiFormatText(m.t))+'</span>';
-    h+='<span class="meta">'+heure(m.d||Date.now())+'</span></div></div>';
+    h+='<div class="row '+(mine?'me':'ot')+'"><div class="bub" data-ai="'+i+'"><span class="tx">'+esc(m.t)+'</span><span class="meta">'+heure(m.d||Date.now())+'</span></div></div>';
   });
   if(aiBusy)h+='<div class="row ot" id="ai-typing"><div class="bub dots"><i></i><i></i><i></i></div></div>';
   if(aiError)h+='<div class="row ot"><div class="st fail" onclick="aiRetry()">'+esc(aiError)+' · Réessayer</div></div>';
@@ -1947,76 +1787,6 @@ function aiRender(scroll){
   if(scroll||near)box.scrollTop=box.scrollHeight;
   $('ai-state').textContent=aiBusy?'écrit…':'En ligne';
   $('ai-send').disabled=aiBusy;
-}
-function aiIsImageRequest(text){
-  return /(?:g[ée]n[èe]re|cr[ée]e|dessine|produis|fabrique|illustre|generate|create|draw|illustrate).{0,90}(?:image|illustration|photo|visuel)|(?:image|illustration|photo|visuel).{0,70}(?:de|avec|repr[ée]sentant|montrant)/i.test(text);
-}
-function aiTextFromResult(j){
-  if(!j)return'';
-  let v=j.text||j.reply||j.response||j.output||j.content;
-  if(!v&&j.choices&&j.choices[0]&&j.choices[0].message)v=j.choices[0].message.content;
-  if(Array.isArray(v))v=v.map(x=>typeof x==='string'?x:(x.text||'')).join('\n');
-  if(typeof v==='object'&&v!==null)v=v.text||v.content||'';
-  return typeof v==='string'?v.trim():'';
-}
-function aiImageFromResult(j){
-  if(!j)return null;
-  const candidates=[
-    j.image,j.image_url,j.url,j.base64,j.b64_json,
-    j.data&&j.data.image,j.data&&j.data.url,
-    j.data&&j.data.b64_json,
-    j.images&&j.images[0],
-    j.data&&Array.isArray(j.data)?j.data[0]:null,
-    j.choices&&j.choices[0]&&j.choices[0].message&&j.choices[0].message.images&&j.choices[0].message.images[0]
-  ];
-  for(let v of candidates){
-    if(!v)continue;
-    if(typeof v==='object'){
-      v=v.url||v.image_url||v.b64_json||v.base64||v.data;
-    }
-    if(typeof v!=='string'||!v)continue;
-    if(v.startsWith('http://')||v.startsWith('https://')||v.startsWith('data:image/'))return v;
-    if(/^[A-Za-z0-9+/=\r\n]+$/.test(v)&&v.length>200)return 'data:image/png;base64,'+v.replace(/\s/g,'');
-  }
-  return null;
-}
-async function aiReadResponse(res){
-  const type=(res.headers.get('content-type')||'').toLowerCase();
-  if(type.startsWith('image/')){
-    const blob=await res.blob();
-    return await new Promise((resolve,reject)=>{
-      const fr=new FileReader();
-      fr.onload=()=>resolve({image:fr.result,text:''});
-      fr.onerror=reject;
-      fr.readAsDataURL(blob);
-    });
-  }
-  const raw=await res.text();
-  let data;
-  try{data=JSON.parse(raw)}
-  catch(e){data={text:raw}}
-  if(!res.ok){
-    const msg=data.error||data.message||data.details||('Erreur HTTP '+res.status);
-    throw new Error(String(msg));
-  }
-  return data;
-}
-async function aiCall(body,signal){
-  const headers={'Content-Type':'application/json'};
-  if(NOVA_AI_SUPABASE_KEY){
-    headers.apikey=NOVA_AI_SUPABASE_KEY;
-    /* Les nouvelles clés publishable ne sont pas des JWT. */
-    if(!NOVA_AI_SUPABASE_KEY.startsWith('sb_publishable_')){
-      headers.Authorization='Bearer '+NOVA_AI_SUPABASE_KEY;
-    }
-  }
-  const res=await fetch(NOVA_AI_URL,{
-    method:'POST',
-    headers,
-    signal,
-    body:JSON.stringify(body)
-  });
-  return aiReadResponse(res);
 }
 async function envoyerNovaAI(txtForce){
   if(aiBusy)return;
@@ -2027,69 +1797,31 @@ async function envoyerNovaAI(txtForce){
   aiError='';aiLastUser=txt;
   aiMsgs.push({r:'u',t:txt,d:Date.now()});
   aiSave();aiBusy=true;aiRender(true);
-
-  if(!navigator.onLine){
-    aiBusy=false;aiError='Pas de connexion Internet';aiRender(true);return;
-  }
-
+  if(!navigator.onLine){aiBusy=false;aiError='Pas de connexion';aiRender(true);return}
   const ctrl=new AbortController();
-  const to=setTimeout(()=>ctrl.abort(),120000);
-
+  const to=setTimeout(()=>ctrl.abort(),60000);
   try{
-    const imageRequest=aiIsImageRequest(txt);
-    let body;
-
-    if(imageRequest){
-      body={
-        action:'image',
-        prompt:txt,
-        width:1024,
-        height:1024
-      };
-    }else{
-      const history=aiMsgs.slice(-13).map(m=>({
-        role:m.r==='u'?'user':'assistant',
-        content:m.t
-      }));
-      body={
-        messages:[{role:'system',content:NOVA_AI_SYSTEM},...history],
-        message:txt,
-        prompt:txt,
-        system:NOVA_AI_SYSTEM
-      };
-    }
-
-    const result=await aiCall(body,ctrl.signal);
-    const out=aiTextFromResult(result);
-    const img=aiImageFromResult(result);
-
-    if(!out&&!img)throw new Error('Réponse vide du serveur NOVA AI');
-
+    const history=aiMsgs.slice(-12).map(m=>({role:m.r==='u'?'user':'assistant',content:m.t}));
+    const headers={'Content-Type':'application/json'};
+    if(NOVA_AI_KEY)headers['Authorization']='Bearer '+NOVA_AI_KEY;
+    const res=await fetch(NOVA_AI_URL,{method:'POST',headers:headers,signal:ctrl.signal,body:JSON.stringify({model:'openai',messages:[{role:'system',content:NOVA_AI_SYSTEM}].concat(history)})});
+    if(!res.ok)throw new Error('Erreur '+res.status);
+    const j=await res.json();
+    const out=((j.choices&&j.choices[0]&&j.choices[0].message&&j.choices[0].message.content)||'').trim();
+    if(!out)throw new Error('Réponse vide');
     aiBusy=false;
-    const m={r:'a',t:out|| (img?'Voici ton image.':''),img:img||null,d:Date.now()};
+    const m={r:'a',t:'',d:Date.now()};
     aiMsgs.push(m);
     aiRender(true);
-
-    if(m.t)await aiType(m,m.t);
+    await aiType(m,out);
     aiSave();
-    aiRender(true);
-
   }catch(e){
     aiBusy=false;
-    if(e&&e.name==='AbortError'){
-      aiError='Délai dépassé. Réessaie.';
-    }else if(/401|403|authorization|apikey|unauthorized/i.test(String(e&&e.message||''))){
-      aiError='Accès refusé : vérifie la clé publishable NOVA AI et la configuration de la fonction.';
-    }else{
-      aiError='NOVA AI est indisponible : '+String(e&&e.message||'erreur réseau').slice(0,100);
-    }
+    aiError=e&&e.name==='AbortError'?'Délai dépassé':'NOVA AI est indisponible';
     aiRender(true);
-  }finally{
-    clearTimeout(to);
-  }
+  }finally{clearTimeout(to)}
 }
-
-/* Animation progressive du texte */
+/* animation d'écriture progressive */
 async function aiType(m,full){
   const box=$('ai-msgs');
   const bubs=box.querySelectorAll('.bub[data-ai]');
@@ -2127,7 +1859,7 @@ $('ai-inp').addEventListener('keydown',e=>{
   if(e.key==='Enter'&&!e.shiftKey&&window.innerWidth>700){e.preventDefault();envoyerNovaAI()}
 });
 
-/* ===== TEMPS RÉEL ===== */
+/* ===== TEMPS RÉEL (messages, réactions, lectures, statuts) ===== */
 function rtRefresh(){
   clearTimeout(rtTimer);
   rtTimer=setTimeout(()=>{
@@ -2157,8 +1889,9 @@ function subscribe(){
       }).subscribe();
   }catch(e){console.warn('Realtime indisponible',e)}
 }
+/* filet de sécurité : synchronise la discussion ouverte toutes les 4 s */
 setInterval(()=>{
-  if(me&&cur&&currentPage==='chat'&&navigator.onLine&&!document.hidden&&convByUser[String(cur.id)]!==LOCAL_SELF_CONV){
+  if(me&&cur&&currentPage==='chat'&&navigator.onLine&&!document.hidden){
     chargerMessages().then(marquerLu).catch(()=>{});
   }
 },4000);
