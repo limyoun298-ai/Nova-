@@ -518,10 +518,27 @@ textarea.field{resize:none;height:6rem}
 const SUPABASE_URL = "https://casmvccycoznwnuqlbca.supabase.co";
 const SUPABASE_KEY = "sb_publishable_ZrAyqx41Yjw2eiFD0ByflA_tufI2FLp";
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {auth:{persistSession:true,autoRefreshToken:true}});
-const KEY_MISSING = SUPABASE_KEY.indexOf('COLLE_ICI')===0;
+const KEY_MISSING = !SUPABASE_KEY || SUPABASE_KEY.indexOf('COLLE_ICI')===0;
 
-const UPDATES=(typeof OFFICIAL_UPDATES!=='undefined')?OFFICIAL_UPDATES:
- [{version:"1.0",date:new Date().toISOString().slice(0,10),titre:"Bienvenue sur Nova",texte:"Nova est lancée. Discutez, partagez vos statuts et gardez le contrôle de votre compte."}];
+const FALLBACK_UPDATES=[
+  {
+    version:"1.0",
+    date:new Date().toISOString().slice(0,10),
+    titre:"Bienvenue sur Nova",
+    texte:"Nova est lancée. Discutez, partagez vos statuts et gardez le contrôle de votre compte."
+  }
+];
+
+const UPDATES=(()=>{
+  try{
+    const source=typeof OFFICIAL_UPDATES!=='undefined'
+      ?OFFICIAL_UPDATES
+      :window.OFFICIAL_UPDATES;
+    return Array.isArray(source)&&source.length?source:FALLBACK_UPDATES;
+  }catch(e){
+    return FALLBACK_UPDATES;
+  }
+})();
 
 /* ===== HELPERS ===== */
 const $=id=>document.getElementById(id);
@@ -672,7 +689,11 @@ function openPop(items,head){
   $('pop').style.display='block';
 }
 function popRun(i){$('pop').style.display='none';window._pop[i].f()}
-document.addEventListener('click',()=>$('pop').style.display='none');
+document.addEventListener('click',e=>{
+  if(e.target.closest('#pop'))return;
+  if(e.target.closest('.hd .ib[onclick*="menu"]'))return;
+  $('pop').style.display='none';
+});
 
 /* ===== THÈME, FOND, ACCESSIBILITÉ ===== */
 function applyTheme(){document.documentElement.dataset.theme=LS('nova_theme')||'nova'}
@@ -792,16 +813,38 @@ async function rpcTry(name,variants){
   }
   return{data:null,error:last};
 }
+
+/* Recherche de profil : l'échec de la RPC ne bloque plus la recherche directe. */
 async function findProfileByCode(code){
-  const r=await rpcTry('find_nova_profile',[{code:code},{p_code:code},{link_code:code},{p_link_code:code},{public_link_code:code},{p_public_link_code:code},{code_input:code},{input_code:code}]);
-  if(r.error)throw r.error;
-  let d=r.data;if(Array.isArray(d))d=d[0];
-  let u=P2U(d);
-  if(!u){
-    const q=await supabaseClient.from('profiles').select('id,display_name,photo_url,public_link_code').eq('public_link_code',code).maybeSingle();
-    u=q.data?P2U(q.data):null;
+  const clean=String(code||'').trim();
+  if(!clean)return null;
+
+  const r=await rpcTry('find_nova_profile',[
+    {code:clean},
+    {p_code:clean},
+    {link_code:clean},
+    {p_link_code:clean},
+    {public_link_code:clean},
+    {p_public_link_code:clean},
+    {code_input:clean},
+    {input_code:clean}
+  ]);
+
+  if(!r.error){
+    let d=r.data;
+    if(Array.isArray(d))d=d[0];
+    const u=P2U(d);
+    if(u)return u;
   }
-  return u;
+
+  const q=await supabaseClient
+    .from('profiles')
+    .select('id,display_name,photo_url,public_link_code,bio')
+    .eq('public_link_code',clean)
+    .maybeSingle();
+
+  if(q.error)throw q.error;
+  return q.data?P2U(q.data):null;
 }
 
 /* ===== MES NOTES : STOCKAGE LOCAL DE SECOURS ===== */
@@ -833,7 +876,20 @@ async function ensureConv(uid){
     return LOCAL_SELF_CONV;
   }
 
-  const r=await rpcTry('nova_create_direct_conversation',[{other_user_id:uid},{p_other_user_id:uid},{target_user_id:uid},{p_target_user_id:uid},{other_id:uid},{p_other_id:uid},{user_id:uid},{p_user_id:uid},{recipient_id:uid},{peer_id:uid},{other_profile_id:uid},{p_other_profile_id:uid}]);
+  const r=await rpcTry('nova_create_direct_conversation',[
+    {other_user_id:uid},
+    {p_other_user_id:uid},
+    {target_user_id:uid},
+    {p_target_user_id:uid},
+    {other_id:uid},
+    {p_other_id:uid},
+    {user_id:uid},
+    {p_user_id:uid},
+    {recipient_id:uid},
+    {peer_id:uid},
+    {other_profile_id:uid},
+    {p_other_profile_id:uid}
+  ]);
   if(r.error)throw r.error;
   let d=r.data;if(Array.isArray(d))d=d[0];
   const id=(d&&typeof d==='object')?(d.id||d.conversation_id||Object.values(d)[0]):d;
@@ -945,26 +1001,81 @@ function resetAdd(){
   $('add-in').value='';$('add-err').textContent='';$('add-card').innerHTML='';
   $('add-btn').disabled=false;$('add-btn').textContent='Analyser';
 }
+
+/* Accepte le lien Nova, une URL web contenant le code ou le code directement. */
+function extraireCodeNova(value){
+  const raw=String(value||'').trim();
+  if(!raw)return null;
+
+  try{
+    const url=new URL(raw);
+    const params=url.searchParams;
+    const code=
+      params.get('id')||
+      params.get('code')||
+      params.get('public_link_code')||
+      params.get('user');
+
+    if(code)return code.trim();
+
+    const parts=url.pathname.split('/').filter(Boolean);
+    if(parts.length){
+      const last=parts[parts.length-1];
+      if(/^[a-z0-9_-]{4,128}$/i.test(last))return last;
+    }
+  }catch(e){}
+
+  const queryMatch=raw.match(/[?&](?:id|code|public_link_code|user)=([^&#\s]+)/i);
+  if(queryMatch){
+    try{return decodeURIComponent(queryMatch[1]).trim()}
+    catch(e){return queryMatch[1].trim()}
+  }
+
+  if(/^[a-z0-9_-]{4,128}$/i.test(raw))return raw;
+  return null;
+}
+
 async function analyserLien(){
   const v=$('add-in').value.trim();
-  $('add-err').textContent='';$('add-card').innerHTML='';
-  const b=$('add-btn');b.disabled=true;b.innerHTML='<span class="spin"></span>';
-  const m=v.match(/^nova:\/\/user\?id=([^&\s]+)$/i);
-  let u=null,bio='';
-  const tasks=[sleep(2000)];
-  if(m){
-    const code=decodeURIComponent(m[1]);
-    tasks.push((async()=>{
-      try{
-        u=await findProfileByCode(code);
-        if(u){bio=u.bio||await getBio(u.id);if(!badgeSet.size)await loadBadges()}
-      }catch(e){u=null;console.warn(e)}
-    })());
+  $('add-err').textContent='';
+  $('add-card').innerHTML='';
+  const b=$('add-btn');
+  const code=extraireCodeNova(v);
+
+  if(!code){
+    $('add-err').textContent='Lien ou code Nova invalide.';
+    return;
   }
-  await Promise.all(tasks);
-  b.disabled=false;b.textContent='Analyser';
-  if(!u){$('add-err').textContent='Lien introuvable';return}
-  if(String(u.id)===String(me.id)){$('add-err').textContent="C'est ton propre lien";return}
+
+  b.disabled=true;b.innerHTML='<span class="spin"></span>';
+
+  let u=null,bio='';
+  try{
+    await Promise.all([
+      sleep(350),
+      (async()=>{
+        u=await findProfileByCode(code);
+        if(u){
+          bio=u.bio||await getBio(u.id);
+          if(!badgeSet.size)await loadBadges();
+        }
+      })()
+    ]);
+  }catch(e){
+    console.warn('Recherche de profil:',e);
+  }finally{
+    b.disabled=false;b.textContent='Analyser';
+  }
+
+  if(!u){
+    $('add-err').textContent='Aucun profil Nova correspondant à ce lien ou à ce code.';
+    return;
+  }
+  if(String(u.id)===String(me.id)){
+    $('add-err').textContent="C'est ton propre lien";
+    return;
+  }
+
   userCache[String(u.id)]=u;
   foundUser={u:u,bio:bio};
   $('add-card').innerHTML=`<div class="card center"><div style="display:flex;justify-content:center;margin-bottom:.8rem">${av(u,'big')}</div><h3 style="margin:.2rem 0;display:flex;justify-content:center;align-items:center">${nameHtml(u)}</h3><p class="sub" style="margin:.4rem 0 1rem">${esc(bio||'Aucune bio publique')}</p><div class="row2"><button class="btn ghost" style="margin:0" onclick="ouvrirVoir(foundUser.u,foundUser.bio)">Voir profil</button><button class="btn" style="margin:0" onclick="ouvrirChat('${esc(u.id)}')">Discuter</button></div></div>`;
@@ -1468,7 +1579,7 @@ function menuChat(){
 }
 function ouvrirMedia(){
   const ph=msgs.filter(m=>m.photo&&!(String(m.expediteur_id)!==String(me.id)&&blockedSet.has(String(m.expediteur_id))));
-  $('media-grid').innerHTML=ph.map(m=>`<img src="${esc(m.photo)}" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:14px" onclick="openSheet('<img src=&quot;'+this.src+'&quot; style=&quot;width:100%;border-radius:18px&quot;>')">`).join('')||'<p class="sub">—</p>';
+  $('media-grid').innerHTML=ph.map(m=>`<img src="${esc(m.photo)}" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:14px" onclick="openSheet('<img src=&quot;'+this.src+'&quot; style=&quot;width:100%;border-radius:18px&quot;')">`).join('')||'<p class="sub">—</p>';
   showPage('media');
 }
 
@@ -1725,41 +1836,65 @@ $('pe-file').onchange=async e=>{
   editPhoto=await lirePhoto(f,400);
   $('pe-av').innerHTML=`<img class="av big" src="${editPhoto}">`;
 };
+
+/* Enregistrement avec vérification de la ligne réellement mise à jour. */
 async function sauverProfil(){
   const nom=$('pe-nom').value.trim();
   const bio=$('pe-bio').value.trim();
   if(!nom){toast('Entrez votre nom');return}
+
   const b=$('pe-save');
   b.disabled=true;
+
   try{
-    const newPhoto=await withLoader('Enregistrement du profil',async()=>{
+    const saved=await withLoader('Enregistrement du profil',async()=>{
       const upd={display_name:nom};
-      let url=null;
-      if(editPhoto!==null){url=await uploadImage('nova-profiles',editPhoto,me.id,'avatar');upd.photo_url=url}
-      if(bio!==(LS('nova_user_bio')||''))upd.bio=bio;
-      const r=await supabaseClient.from('profiles').update(upd).eq('id',me.id);
+      if(editPhoto!==null){
+        upd.photo_url=await uploadImage('nova-profiles',editPhoto,me.id,'avatar');
+      }
+      upd.bio=bio;
+
+      const r=await supabaseClient
+        .from('profiles')
+        .update(upd)
+        .eq('id',me.id)
+        .select('id,display_name,photo_url,public_link_code,bio')
+        .maybeSingle();
+
       if(r.error)throw r.error;
-      return url;
+      if(!r.data)throw new Error('Aucun profil mis à jour. Vérifie les permissions Supabase.');
+
+      return r.data;
     },350);
 
-    me.nom=nom;
-    if(newPhoto)me.photo=newPhoto;
-    me.bio=bio;
-    LS('nova_user_bio',bio);
+    me.nom=saved.display_name||nom;
+    me.photo=saved.photo_url||me.photo;
+    me.code=saved.public_link_code||me.code||'';
+    me.bio=saved.bio||bio;
+    me.lien='nova://user?id='+me.code;
+
+    LS('nova_user_bio',me.bio);
     userCache[String(me.id)]=myU();
 
-    /* Actualisation immédiate de toutes les zones du profil. */
     $('pe-av').innerHTML=av(myU(),'big');
+    $('pe-nom').value=me.nom;
+    $('pe-bio').value=me.bio;
     $('pe-link').textContent=me.lien;
+
     renderSettings();
 
     if(cur&&String(cur.id)===String(me.id)){
       $('ch-av').innerHTML=av(myU(),'sm');
       $('ch-name').textContent='Mes notes';
     }
+
+    if(currentPage==='discussions')await chargerDiscussions();
     toast('Profil enregistré');
-  }catch(e){toast('Erreur : '+(e.message||e))}
-  finally{b.disabled=false}
+  }catch(e){
+    toast('Erreur : '+(e.message||e));
+  }finally{
+    b.disabled=false;
+  }
 }
 function renderAcces(){changerTailleTexte(LS('nova_size')||'medium');applyContraste()}
 
@@ -1859,7 +1994,10 @@ async function envoyerLien(){
 
 /* ===== NOVA AI : EDGE FUNCTION SUPABASE + OPENROUTER IMAGES ===== */
 const NOVA_AI_SUPABASE_URL='https://nqtychmsamftwiwwphis.supabase.co';
-const NOVA_AI_SUPABASE_KEY=''; 
+
+/* Clé publishable du projet NOVA AI, distincte du projet de messagerie. */
+const NOVA_AI_SUPABASE_KEY='sb_publishable_yimnMzvL_cSPd5cDF0SWwg_8YxM8CSG';
+
 const NOVA_AI_URL=NOVA_AI_SUPABASE_URL+'/functions/v1/nova-ai';
 
 const NOVA_AI_SYSTEM="Tu es NOVA AI, l'assistant intégré à l'application de messagerie Nova. Tu réponds naturellement, clairement et utilement. Tu utilises le français si l'utilisateur écrit en français. Tu peux expliquer, rédiger, traduire, analyser et aider sur différents sujets. Utilise des tableaux Markdown lorsque cela rend la réponse plus claire.";
@@ -1951,37 +2089,119 @@ function aiRender(scroll){
 function aiIsImageRequest(text){
   return /(?:g[ée]n[èe]re|cr[ée]e|dessine|produis|fabrique|illustre|generate|create|draw|illustrate).{0,90}(?:image|illustration|photo|visuel)|(?:image|illustration|photo|visuel).{0,70}(?:de|avec|repr[ée]sentant|montrant)/i.test(text);
 }
+
+/* Récupération du texte depuis plusieurs formats de réponse possibles. */
 function aiTextFromResult(j){
   if(!j)return'';
+
   let v=j.text||j.reply||j.response||j.output||j.content;
-  if(!v&&j.choices&&j.choices[0]&&j.choices[0].message)v=j.choices[0].message.content;
-  if(Array.isArray(v))v=v.map(x=>typeof x==='string'?x:(x.text||'')).join('\n');
-  if(typeof v==='object'&&v!==null)v=v.text||v.content||'';
+
+  if(!v&&j.data&&typeof j.data==='object'){
+    v=j.data.text||j.data.reply||j.data.response||j.data.output||j.data.content;
+  }
+
+  if(!v&&j.result&&typeof j.result==='object'){
+    v=j.result.text||j.result.reply||j.result.content;
+  }
+
+  if(!v&&j.choices&&j.choices[0]&&j.choices[0].message){
+    v=j.choices[0].message.content;
+  }
+
+  if(Array.isArray(v)){
+    v=v.map(x=>{
+      if(typeof x==='string')return x;
+      if(x&&typeof x==='object')return x.text||x.content||'';
+      return '';
+    }).filter(Boolean).join('\n');
+  }
+
+  if(typeof v==='object'&&v!==null){
+    v=v.text||v.content||v.message||'';
+  }
+
   return typeof v==='string'?v.trim():'';
 }
+
+/* Récupération d'images, y compris le format OpenRouter image_url.url. */
 function aiImageFromResult(j){
   if(!j)return null;
-  const candidates=[
-    j.image,j.image_url,j.url,j.base64,j.b64_json,
-    j.data&&j.data.image,j.data&&j.data.url,
-    j.data&&j.data.b64_json,
-    j.images&&j.images[0],
-    j.data&&Array.isArray(j.data)?j.data[0]:null,
-    j.choices&&j.choices[0]&&j.choices[0].message&&j.choices[0].message.images&&j.choices[0].message.images[0]
-  ];
-  for(let v of candidates){
-    if(!v)continue;
-    if(typeof v==='object'){
-      v=v.url||v.image_url||v.b64_json||v.base64||v.data;
+
+  const isImageString=(value,mime)=>{
+    if(typeof value!=='string')return null;
+    const v=value.trim();
+    if(!v)return null;
+
+    if(/^https?:\/\//i.test(v)||/^data:image\//i.test(v))return v;
+
+    if(/^[A-Za-z0-9+/=\r\n]+$/.test(v)&&v.length>200){
+      return 'data:'+(mime||'image/png')+';base64,'+v.replace(/\s/g,'');
     }
-    if(typeof v!=='string'||!v)continue;
-    if(v.startsWith('http://')||v.startsWith('https://')||v.startsWith('data:image/'))return v;
-    if(/^[A-Za-z0-9+/=\r\n]+$/.test(v)&&v.length>200)return 'data:image/png;base64,'+v.replace(/\s/g,'');
+    return null;
+  };
+
+  const search=(value,depth,mime)=>{
+    if(value==null||depth>6)return null;
+
+    if(typeof value==='string')return isImageString(value,mime);
+
+    if(Array.isArray(value)){
+      for(const item of value){
+        const result=search(item,depth+1,mime);
+        if(result)return result;
+      }
+      return null;
+    }
+
+    if(typeof value==='object'){
+      const currentMime=value.mime_type||value.mimeType||value.content_type||mime||'image/png';
+
+      const keys=[
+        'url',
+        'image_url',
+        'b64_json',
+        'base64',
+        'data',
+        'image',
+        'src',
+        'images',
+        'result',
+        'output'
+      ];
+
+      for(const key of keys){
+        if(value[key]===undefined||value[key]===null)continue;
+        const result=search(value[key],depth+1,currentMime);
+        if(result)return result;
+      }
+    }
+
+    return null;
+  };
+
+  const candidates=[
+    j.image,
+    j.image_url,
+    j.url,
+    j.base64,
+    j.b64_json,
+    j.data,
+    j.images,
+    j.result,
+    j.output,
+    j.choices&&j.choices[0]&&j.choices[0].message&&j.choices[0].message.images
+  ];
+
+  for(const candidate of candidates){
+    const image=search(candidate,0,'image/png');
+    if(image)return image;
   }
+
   return null;
 }
 async function aiReadResponse(res){
   const type=(res.headers.get('content-type')||'').toLowerCase();
+
   if(type.startsWith('image/')){
     const blob=await res.blob();
     return await new Promise((resolve,reject)=>{
@@ -1991,45 +2211,70 @@ async function aiReadResponse(res){
       fr.readAsDataURL(blob);
     });
   }
+
   const raw=await res.text();
   let data;
   try{data=JSON.parse(raw)}
   catch(e){data={text:raw}}
+
   if(!res.ok){
-    const msg=data.error||data.message||data.details||('Erreur HTTP '+res.status);
+    let msg=data.error||data.message||data.details||('Erreur HTTP '+res.status);
+    if(typeof msg==='object')msg=msg.message||JSON.stringify(msg);
     throw new Error(String(msg));
   }
+
   return data;
 }
 async function aiCall(body,signal){
-  const headers={'Content-Type':'application/json'};
-  if(NOVA_AI_SUPABASE_KEY){
-    headers.apikey=NOVA_AI_SUPABASE_KEY;
-    /* Les nouvelles clés publishable ne sont pas des JWT. */
-    if(!NOVA_AI_SUPABASE_KEY.startsWith('sb_publishable_')){
-      headers.Authorization='Bearer '+NOVA_AI_SUPABASE_KEY;
-    }
+  if(!NOVA_AI_SUPABASE_KEY){
+    throw new Error('Clé publishable du projet NOVA AI manquante.');
   }
+
+  const headers={
+    'Content-Type':'application/json',
+    'Accept':'application/json,image/*',
+    'apikey':NOVA_AI_SUPABASE_KEY
+  };
+
+  /* Les clés sb_publishable_ ne sont pas des JWT. */
+  if(!NOVA_AI_SUPABASE_KEY.startsWith('sb_publishable_')){
+    headers.Authorization='Bearer '+NOVA_AI_SUPABASE_KEY;
+  }
+
   const res=await fetch(NOVA_AI_URL,{
     method:'POST',
     headers,
     signal,
     body:JSON.stringify(body)
   });
+
   return aiReadResponse(res);
 }
 async function envoyerNovaAI(txtForce){
   if(aiBusy)return;
+
   const inp=$('ai-inp');
   const txt=(typeof txtForce==='string'?txtForce:inp.value).trim();
   if(!txt)return;
-  if(typeof txtForce!=='string'){inp.value='';inp.style.height='2.6rem'}
-  aiError='';aiLastUser=txt;
+
+  if(typeof txtForce!=='string'){
+    inp.value='';
+    inp.style.height='2.6rem';
+  }
+
+  aiError='';
+  aiLastUser=txt;
   aiMsgs.push({r:'u',t:txt,d:Date.now()});
-  aiSave();aiBusy=true;aiRender(true);
+  aiSave();
+
+  aiBusy=true;
+  aiRender(true);
 
   if(!navigator.onLine){
-    aiBusy=false;aiError='Pas de connexion Internet';aiRender(true);return;
+    aiBusy=false;
+    aiError='Pas de connexion Internet';
+    aiRender(true);
+    return;
   }
 
   const ctrl=new AbortController();
@@ -2051,6 +2296,7 @@ async function envoyerNovaAI(txtForce){
         role:m.r==='u'?'user':'assistant',
         content:m.t
       }));
+
       body={
         messages:[{role:'system',content:NOVA_AI_SYSTEM},...history],
         message:txt,
@@ -2063,19 +2309,37 @@ async function envoyerNovaAI(txtForce){
     const out=aiTextFromResult(result);
     const img=aiImageFromResult(result);
 
-    if(!out&&!img)throw new Error('Réponse vide du serveur NOVA AI');
+    /* Certaines fonctions renvoient directement {image: ...}. */
+    const directImage=img||(
+      result&&typeof result.image==='string'
+        ?aiImageFromResult({image:result.image})
+        :null
+    );
 
-    aiBusy=false;
-    const m={r:'a',t:out|| (img?'Voici ton image.':''),img:img||null,d:Date.now()};
+    if(!out&&!directImage){
+      throw new Error('Réponse vide du serveur NOVA AI');
+    }
+
+    const m={
+      r:'a',
+      t:out||(directImage?'Voici ton image.':''),
+      img:directImage||null,
+      d:Date.now()
+    };
+
     aiMsgs.push(m);
     aiRender(true);
 
+    /* L'indicateur reste actif pendant l'écriture. */
     if(m.t)await aiType(m,m.t);
+
+    aiBusy=false;
     aiSave();
     aiRender(true);
 
   }catch(e){
     aiBusy=false;
+
     if(e&&e.name==='AbortError'){
       aiError='Délai dépassé. Réessaie.';
     }else if(/401|403|authorization|apikey|unauthorized/i.test(String(e&&e.message||''))){
@@ -2083,9 +2347,12 @@ async function envoyerNovaAI(txtForce){
     }else{
       aiError='NOVA AI est indisponible : '+String(e&&e.message||'erreur réseau').slice(0,100);
     }
+
     aiRender(true);
   }finally{
     clearTimeout(to);
+    aiBusy=false;
+    aiRender(true);
   }
 }
 
@@ -2095,36 +2362,59 @@ async function aiType(m,full){
   const bubs=box.querySelectorAll('.bub[data-ai]');
   const el=bubs[bubs.length-1];
   const tx=el&&el.querySelector('.tx');
+
   $('ai-state').textContent='écrit…';
+
   let i=0;
   while(i<full.length){
     i=Math.min(full.length,i+3);
     m.t=full.slice(0,i);
+
     if(tx)tx.textContent=m.t;
-    if(box.scrollHeight-box.scrollTop-box.clientHeight<160)box.scrollTop=box.scrollHeight;
-    if(currentPage!=='nova-ai'){m.t=full;break}
+
+    if(box.scrollHeight-box.scrollTop-box.clientHeight<160){
+      box.scrollTop=box.scrollHeight;
+    }
+
+    if(currentPage!=='nova-ai'){
+      m.t=full;
+      break;
+    }
+
     await sleep(16);
   }
+
   m.t=full;
   if(tx)tx.textContent=full;
   $('ai-state').textContent='En ligne';
 }
 function aiRetry(){
   if(aiBusy||!aiLastUser)return;
-  if(aiMsgs.length&&aiMsgs[aiMsgs.length-1].r==='u')aiMsgs.pop();
+
+  if(aiMsgs.length&&aiMsgs[aiMsgs.length-1].r==='u'){
+    aiMsgs.pop();
+  }
+
   aiError='';
   envoyerNovaAI(aiLastUser);
 }
 function aiClear(){
   if(aiBusy)return;
-  aiMsgs=[];aiError='';aiSave();aiRender(true);toast('Conversation effacée');
+  aiMsgs=[];
+  aiError='';
+  aiSave();
+  aiRender(true);
+  toast('Conversation effacée');
 }
 $('ai-inp').addEventListener('input',function(){
   this.style.height='2.6rem';
   this.style.height=Math.min(this.scrollHeight,112)+'px';
 });
 $('ai-inp').addEventListener('keydown',e=>{
-  if(e.key==='Enter'&&!e.shiftKey&&window.innerWidth>700){e.preventDefault();envoyerNovaAI()}
+  if(e.key==='Enter'&&!e.shiftKey&&window.innerWidth>700){
+    e.preventDefault();
+    envoyerNovaAI();
+  }
 });
 
 /* ===== TEMPS RÉEL ===== */
@@ -2134,8 +2424,14 @@ function rtRefresh(){
     try{
       if(currentPage==='discussions')chargerDiscussions();
       else refreshUnread();
-      if(cur&&currentPage==='chat')chargerMessages().then(marquerLu);
-      if(currentPage==='statuts'&&$('sv').style.display!=='flex')chargerStatuts();
+
+      if(cur&&currentPage==='chat'){
+        chargerMessages().then(marquerLu);
+      }
+
+      if(currentPage==='statuts'&&$('sv').style.display!=='flex'){
+        chargerStatuts();
+      }
     }catch(e){console.warn(e)}
   },250);
 }
@@ -2146,6 +2442,7 @@ function subscribe(){
       ch.on('postgres_changes',{event:'*',schema:'public',table:t},rtRefresh);
     });
     ch.subscribe();
+
     typingCh=supabaseClient.channel('nova-typing')
       .on('broadcast',{event:'typing'},({payload})=>{
         if(!cur||payload.to!==String(me.id)||payload.from!==String(cur.id))return;
@@ -2153,7 +2450,11 @@ function subscribe(){
         const e=$('typing');
         if(e){e.style.display='flex';$('msgs').scrollTop=$('msgs').scrollHeight}
         clearTimeout(typingTimer);
-        typingTimer=setTimeout(()=>{typingOn=false;const x=$('typing');if(x)x.style.display='none'},3000);
+        typingTimer=setTimeout(()=>{
+          typingOn=false;
+          const x=$('typing');
+          if(x)x.style.display='none';
+        },3000);
       }).subscribe();
   }catch(e){console.warn('Realtime indisponible',e)}
 }
@@ -2166,30 +2467,46 @@ setInterval(()=>{
 /* ===== DÉMARRAGE ===== */
 function initApp(){
   userCache[String(me.id)]=myU();
-  if(!realtimeReady){subscribe();realtimeReady=true}
+
+  if(!realtimeReady){
+    subscribe();
+    realtimeReady=true;
+  }
+
   loadBadges().then(()=>{
     if(currentPage==='discussions')chargerDiscussions();
     if(currentPage==='statuts')chargerStatuts();
   });
+
   stack=[];
   showPage('discussions');
   refreshUnread();
 }
 async function restoreSession(){
   if(KEY_MISSING)return false;
+
   try{
     const s=(await supabaseClient.auth.getSession()).data.session;
     if(!s)return false;
+
     const p=await chargerMonProfil(s.user.id,4);
     if(!p)return false;
+
     setMe(p);
     return true;
-  }catch(e){console.warn(e);return false}
+  }catch(e){
+    console.warn(e);
+    return false;
+  }
 }
 function boot(){
-  applyTheme();applyContraste();icons();applyChatBg();
+  applyTheme();
+  applyContraste();
+  icons();
+  applyChatBg();
   changerTailleTexte(LS('nova_size')||'medium');
   $('loader-logo').innerHTML=STAR;
+
   setTimeout(async()=>{
     if(await restoreSession())initApp();
     else showPage('inscription');
@@ -2197,13 +2514,20 @@ function boot(){
 }
 window.addEventListener('pageshow',e=>{
   if(!e.persisted)return;
+
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));
   $('splash').classList.add('on');
   $('nav').style.display='none';
   currentPage='splash';
+
   setTimeout(()=>{
-    if(me){userCache[String(me.id)]=myU();stack=[];showPage('discussions')}
-    else showPage('inscription');
+    if(me){
+      userCache[String(me.id)]=myU();
+      stack=[];
+      showPage('discussions');
+    }else{
+      showPage('inscription');
+    }
   },3000);
 });
 boot();
