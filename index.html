@@ -328,8 +328,8 @@ textarea.field{resize:none;height:6rem}
   <div class="page" id="p-add">
     <div class="hd"><button class="ib" onclick="goBack()" data-ic="back"></button><h2>Ajouter par lien</h2></div>
     <div class="scroll">
-      <span class="lab">Étape 1 · Colle le lien Nova ou le code d'une personne</span>
-      <input class="field" id="add-in" placeholder="nova://user?id=… ou code" autocomplete="off" autocapitalize="off">
+      <span class="lab">Étape 1 · Colle le lien Nova d'une personne</span>
+      <input class="field" id="add-in" placeholder="nova://user?id=…" autocomplete="off" autocapitalize="off">
       <button class="btn" id="add-btn" onclick="analyserLien()" style="margin-top:0">Analyser</button>
       <div class="err" id="add-err"></div>
       <div id="add-card"></div>
@@ -512,6 +512,7 @@ textarea.field{resize:none;height:6rem}
 <div class="toast" id="toast"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="update.official.js" onerror="void 0"></script>
 <script>
 /* ===== PROJET SUPABASE DE LA MESSAGERIE ===== */
 const SUPABASE_URL = "https://casmvccycoznwnuqlbca.supabase.co";
@@ -519,15 +520,8 @@ const SUPABASE_KEY = "sb_publishable_ZrAyqx41Yjw2eiFD0ByflA_tufI2FLp";
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {auth:{persistSession:true,autoRefreshToken:true}});
 const KEY_MISSING = SUPABASE_KEY.indexOf('COLLE_ICI')===0;
 
-/* Client partagé : update.official.js peut l'utiliser (window.supabaseClient). */
-window.supabaseClient=supabaseClient;
-window.NOVA_SUPABASE=supabaseClient;
-
-/* Annonces officielles : liste par défaut, remplacée par update.official.js et/ou Supabase. */
-let UPDATES=[{version:"1.0",date:new Date().toISOString().slice(0,10),titre:"Bienvenue sur Nova",texte:"Nova est lancée. Discutez, partagez vos statuts et gardez le contrôle de votre compte."}];
-const DEFAULT_UPDATES=UPDATES.slice();
-let officialTable=null;
-const OFFICIAL_TABLES=['nova_updates','official_updates','nova_official_updates','nova_announcements','official_announcements','announcements','updates'];
+const UPDATES=(typeof OFFICIAL_UPDATES!=='undefined')?OFFICIAL_UPDATES:
+ [{version:"1.0",date:new Date().toISOString().slice(0,10),titre:"Bienvenue sur Nova",texte:"Nova est lancée. Discutez, partagez vos statuts et gardez le contrôle de votre compte."}];
 
 /* ===== HELPERS ===== */
 const $=id=>document.getElementById(id);
@@ -763,7 +757,7 @@ function showPage(id,back){
   $('nav').style.display=home?'flex':'none';
   document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('act',b.dataset.go===id));
   if(home)stack=[];
-  const H={discussions:chargerDiscussions,statuts:chargerStatuts,parametres:renderSettings,'p-profil':renderProfilEdit,'p-theme':renderTheme,'p-fond':renderFond,'p-acces':renderAcces,'p-badge':renderBadge,'p-lien':renderLien,'p-suppr':openSuppr,nova:()=>{renderNova();return syncOfficial()},'p-add':resetAdd};
+  const H={discussions:chargerDiscussions,statuts:chargerStatuts,parametres:renderSettings,'p-profil':renderProfilEdit,'p-theme':renderTheme,'p-fond':renderFond,'p-acces':renderAcces,'p-badge':renderBadge,'p-lien':renderLien,'p-suppr':openSuppr,nova:renderNova,'p-add':resetAdd};
   if(H[id]){try{const r=H[id]();if(r&&r.catch)r.catch(e=>console.warn(e))}catch(e){console.warn(e)}}
 }
 function goBack(){if(currentPage==='chat')cur=null;showPage(stack.pop()||'discussions',true)}
@@ -798,44 +792,16 @@ async function rpcTry(name,variants){
   }
   return{data:null,error:last};
 }
-/* Recherche d'un profil par son code public.
-   1) fonction RPC find_nova_profile  2) lecture directe de la table profiles
-   3) mon propre profil, connu localement (marche même si RLS bloque la lecture). */
 async function findProfileByCode(code){
-  code=String(code||'').trim();
-  if(!code)return null;
-  let u=null,lastErr=null;
-  try{
-    const r=await rpcTry('find_nova_profile',[{code:code},{p_code:code},{link_code:code},{p_link_code:code},{public_link_code:code},{p_public_link_code:code},{code_input:code},{input_code:code}]);
-    if(r.error)lastErr=r.error;
-    else{
-      let d=r.data;if(Array.isArray(d))d=d[0];
-      u=P2U(d);
-    }
-  }catch(e){lastErr=e}
+  const r=await rpcTry('find_nova_profile',[{code:code},{p_code:code},{link_code:code},{p_link_code:code},{public_link_code:code},{p_public_link_code:code},{code_input:code},{input_code:code}]);
+  if(r.error)throw r.error;
+  let d=r.data;if(Array.isArray(d))d=d[0];
+  let u=P2U(d);
   if(!u){
-    try{
-      let q=await supabaseClient.from('profiles').select('id,display_name,photo_url,public_link_code,bio').eq('public_link_code',code).maybeSingle();
-      if(q.error)q=await supabaseClient.from('profiles').select('id,display_name,photo_url,public_link_code').eq('public_link_code',code).maybeSingle();
-      if(q.data)u=P2U(q.data);
-      else if(q.error)lastErr=lastErr||q.error;
-    }catch(e){lastErr=lastErr||e}
+    const q=await supabaseClient.from('profiles').select('id,display_name,photo_url,public_link_code').eq('public_link_code',code).maybeSingle();
+    u=q.data?P2U(q.data):null;
   }
-  if(!u&&me&&me.code&&code===me.code){
-    u={id:String(me.id),nom:me.nom,photo_profil:me.photo,code:me.code,bio:me.bio};
-  }
-  if(!u&&lastErr)console.warn('findProfileByCode',lastErr);
   return u;
-}
-
-/* Extrait le code d'un lien Nova (nova://user?id=CODE, lien web ?id=CODE) ou d'un code brut. */
-function extractCode(v){
-  v=String(v||'').trim();
-  if(!v)return null;
-  const m=v.match(/[?&#]id=([^&\s#]+)/i)||v.match(/[?&#]code=([^&\s#]+)/i);
-  if(m){try{return decodeURIComponent(m[1])}catch(e){return m[1]}}
-  if(/^[^\s\/:?&#]+$/.test(v))return v;
-  return null;
 }
 
 /* ===== MES NOTES : STOCKAGE LOCAL DE SECOURS ===== */
@@ -854,69 +820,25 @@ function saveLocalNotes(list){
     return false;
   }
 }
-const directArgs=uid=>[{other_user_id:uid},{p_other_user_id:uid},{target_user_id:uid},{p_target_user_id:uid},{other_id:uid},{p_other_id:uid},{user_id:uid},{p_user_id:uid},{recipient_id:uid},{peer_id:uid},{other_profile_id:uid},{p_other_profile_id:uid}];
-function convIdFrom(d){
-  if(Array.isArray(d))d=d[0];
-  const id=(d&&typeof d==='object')?(d.id||d.conversation_id||Object.values(d)[0]):d;
-  return id?String(id):null;
-}
-/* Conversation avec soi-même stockée dans Supabase (RPC, sinon insertion directe). */
-async function createSelfConv(){
-  try{
-    const r=await rpcTry('nova_create_direct_conversation',directArgs(String(me.id)));
-    if(!r.error){const id=convIdFrom(r.data);if(id)return id}
-  }catch(e){console.warn(e)}
-  try{
-    const c=await supabaseClient.from('conversations').insert({}).select('id').single();
-    if(c.error||!c.data)return null;
-    const m=await supabaseClient.from('conversation_members').insert({conversation_id:c.data.id,user_id:me.id});
-    if(m.error)return null;
-    return String(c.data.id);
-  }catch(e){console.warn(e);return null}
-}
-/* Envoie vers Supabase les anciennes notes du carnet local. */
-async function migrerNotesLocales(conv){
-  let rest=loadLocalNotes();
-  if(!rest.length)return;
-  try{
-    while(rest.length){
-      const n=rest[0];
-      let row;
-      if(n.photo){
-        const url=String(n.photo).startsWith('data:')?await uploadImage('nova-chat',n.photo,me.id,'img'):n.photo;
-        row={conversation_id:conv,sender_id:me.id,content:url+(n.texte?'\n'+n.texte:''),message_type:'image'};
-      }else row={conversation_id:conv,sender_id:me.id,content:n.texte||'',message_type:'text'};
-      const r=await supabaseClient.from('messages').insert(row);
-      if(r.error)throw r.error;
-      rest.shift();
-      saveLocalNotes(rest);
-    }
-  }catch(e){console.warn('Migration des notes',e)}
-}
 async function ensureConv(uid){
   uid=String(uid);
-  if(convByUser[uid]&&convByUser[uid]!==LOCAL_SELF_CONV)return convByUser[uid];
+  if(convByUser[uid])return convByUser[uid];
   await computeInbox();
-  if(convByUser[uid]&&convByUser[uid]!==LOCAL_SELF_CONV)return convByUser[uid];
+  if(convByUser[uid])return convByUser[uid];
 
-  /* Conversation avec soi-même : d'abord dans Supabase,
-     sinon carnet local privé en secours. */
+  /* Si le backend ne permet pas une conversation avec soi-même,
+     Nova utilise automatiquement un carnet local privé. */
   if(me&&uid===String(me.id)){
-    const id=await createSelfConv();
-    if(id){
-      convByUser[uid]=id;convOwner[id]=uid;
-      await migrerNotesLocales(id);
-      return id;
-    }
     convByUser[uid]=LOCAL_SELF_CONV;
     return LOCAL_SELF_CONV;
   }
 
-  const r=await rpcTry('nova_create_direct_conversation',directArgs(uid));
+  const r=await rpcTry('nova_create_direct_conversation',[{other_user_id:uid},{p_other_user_id:uid},{target_user_id:uid},{p_target_user_id:uid},{other_id:uid},{p_other_id:uid},{user_id:uid},{p_user_id:uid},{recipient_id:uid},{peer_id:uid},{other_profile_id:uid},{p_other_profile_id:uid}]);
   if(r.error)throw r.error;
-  const id=convIdFrom(r.data);
+  let d=r.data;if(Array.isArray(d))d=d[0];
+  const id=(d&&typeof d==='object')?(d.id||d.conversation_id||Object.values(d)[0]):d;
   if(!id)throw new Error('Conversation introuvable');
-  convByUser[uid]=id;convOwner[id]=uid;
+  convByUser[uid]=String(id);convOwner[String(id)]=uid;
   return convByUser[uid];
 }
 
@@ -1027,25 +949,22 @@ async function analyserLien(){
   const v=$('add-in').value.trim();
   $('add-err').textContent='';$('add-card').innerHTML='';
   const b=$('add-btn');b.disabled=true;b.innerHTML='<span class="spin"></span>';
-  const code=extractCode(v);
+  const m=v.match(/^nova:\/\/user\?id=([^&\s]+)$/i);
   let u=null,bio='';
   const tasks=[sleep(2000)];
-  if(code){
+  if(m){
+    const code=decodeURIComponent(m[1]);
     tasks.push((async()=>{
       try{
         u=await findProfileByCode(code);
-        if(u){
-          bio=u.bio||(String(u.id)===String(me.id)?me.bio:await getBio(u.id));
-          if(!badgeSet.size)await loadBadges();
-        }
+        if(u){bio=u.bio||await getBio(u.id);if(!badgeSet.size)await loadBadges()}
       }catch(e){u=null;console.warn(e)}
     })());
   }
   await Promise.all(tasks);
   b.disabled=false;b.textContent='Analyser';
   if(!u){$('add-err').textContent='Lien introuvable';return}
-  /* Mon propre profil : autorisé, la discussion s'ouvre dans « Mes notes ». */
-  if(String(u.id)===String(me.id))u=Object.assign({},myU(),{code:me.code});
+  if(String(u.id)===String(me.id)){$('add-err').textContent="C'est ton propre lien";return}
   userCache[String(u.id)]=u;
   foundUser={u:u,bio:bio};
   $('add-card').innerHTML=`<div class="card center"><div style="display:flex;justify-content:center;margin-bottom:.8rem">${av(u,'big')}</div><h3 style="margin:.2rem 0;display:flex;justify-content:center;align-items:center">${nameHtml(u)}</h3><p class="sub" style="margin:.4rem 0 1rem">${esc(bio||'Aucune bio publique')}</p><div class="row2"><button class="btn ghost" style="margin:0" onclick="ouvrirVoir(foundUser.u,foundUser.bio)">Voir profil</button><button class="btn" style="margin:0" onclick="ouvrirChat('${esc(u.id)}')">Discuter</button></div></div>`;
@@ -1057,33 +976,6 @@ async function ouvrirVoir(u,bio){
   $('voir-btn').onclick=()=>ouvrirChat(u.id);
   showPage('p-voir');
   if(bio===undefined){const b=await getBio(u.id);$('voir-bio').textContent=b||'Aucune bio publique'}
-}
-
-/* ===== LIEN DE PROFIL OUVERT DEPUIS L'EXTÉRIEUR (?id=CODE) ===== */
-function pendingCodeFromUrl(){
-  try{
-    const p=new URLSearchParams(location.search);
-    let c=p.get('id')||p.get('code')||p.get('user');
-    if(!c&&location.hash){const m=location.hash.match(/(?:id|code)=([^&]+)/i);if(m)c=decodeURIComponent(m[1])}
-    if(c){
-      LS('nova_pending_code',c);
-      if(history.replaceState)history.replaceState(null,'',location.pathname);
-    }
-  }catch(e){console.warn(e)}
-}
-async function ouvrirLienEntrant(){
-  const c=LS('nova_pending_code');
-  if(!c||!me)return;
-  LS('nova_pending_code','');
-  try{
-    const u=await findProfileByCode(c);
-    if(!u){toast('Lien introuvable');return}
-    const isMe=String(u.id)===String(me.id);
-    const uu=isMe?Object.assign({},myU(),{code:me.code}):u;
-    userCache[String(uu.id)]=uu;
-    if(!badgeSet.size)await loadBadges();
-    ouvrirVoir(uu,isMe?me.bio:(u.bio||await getBio(u.id)));
-  }catch(e){console.warn(e);toast('Lien introuvable')}
 }
 
 /* ===== DISCUSSIONS ===== */
@@ -1202,67 +1094,6 @@ async function chargerDiscussions(){
   unreadN=ids.reduce((a,k)=>a+(map[k]?map[k].unread:0),0);
   setDot();
 }
-
-/* ===== ANNONCES OFFICIELLES (update.official.js + Supabase) ===== */
-/* Normalise une annonce venant de update.official.js ou d'une table Supabase. */
-function normUpdate(r,i){
-  if(!r||typeof r!=='object')return null;
-  const raw=r.created_at||r.published_at||r.date_publication||r.date||'';
-  const dt=raw?new Date(raw):null;
-  const valid=!!dt&&!isNaN(dt.getTime());
-  const titre=r.titre||r.title||r.subject||r.name||'Annonce Nova';
-  let texte=r.texte!=null?r.texte:(r.content!=null?r.content:(r.body!=null?r.body:(r.message!=null?r.message:(r.text!=null?r.text:(r.description!=null?r.description:'')))));
-  texte=String(texte);
-  /* Si les retours à la ligne ont été enregistrés sous forme littérale \n, on les rétablit. */
-  if(texte.indexOf('\n')<0&&texte.indexOf('\\n')>=0)texte=texte.replace(/\\n/g,'\n');
-  texte=texte.replace(/\r\n?/g,'\n');
-  const dateStr=(typeof r.date==='string'&&/^\d{4}-\d{2}-\d{2}/.test(r.date))?r.date.slice(0,10):(valid?dt.toISOString().slice(0,10):new Date().toISOString().slice(0,10));
-  const hasTime=typeof raw==='string'&&raw.length>10;
-  return{
-    version:String(r.version!=null?r.version:(r.id!=null?r.id:('u'+i))),
-    date:dateStr,
-    heure:r.heure||(valid&&hasTime?heure(dt):''),
-    titre:String(titre),
-    texte:texte,
-    taille:r.taille||null,
-    _t:valid?dt.getTime():i
-  };
-}
-/* Remplace la liste des annonces et rafraîchit l'écran. */
-function setOfficialUpdates(list){
-  if(!Array.isArray(list)||!list.length)return;
-  const n=list.map(normUpdate).filter(Boolean);
-  if(!n.length)return;
-  n.sort((a,b)=>a._t-b._t);
-  UPDATES=n;
-  if(currentPage==='nova')renderNova();
-  else if(currentPage==='discussions'&&me)chargerDiscussions();
-  else if(currentPage==='statuts'&&me)chargerStatuts();
-  setDot();
-}
-/* Point d'entrée à appeler depuis update.official.js : window.novaSetUpdates([...]) */
-window.novaSetUpdates=setOfficialUpdates;
-window.addEventListener('nova:updates',e=>{if(e&&e.detail)setOfficialUpdates(e.detail)});
-
-/* Combine : annonces locales du module + annonces lues dans Supabase. */
-async function syncOfficial(){
-  let all=[];
-  try{
-    if(typeof OFFICIAL_UPDATES!=='undefined'&&Array.isArray(OFFICIAL_UPDATES))all=OFFICIAL_UPDATES.slice();
-  }catch(e){}
-  let remote=[];
-  const order=officialTable?[officialTable]:OFFICIAL_TABLES;
-  for(const t of order){
-    try{
-      const r=await supabaseClient.from(t).select('*').limit(300);
-      if(!r.error&&Array.isArray(r.data)){remote=r.data;officialTable=t;break}
-    }catch(e){}
-  }
-  const seen=new Set(remote.map(x=>String(x.version!=null?x.version:x.id)));
-  all=remote.concat(all.filter(x=>!seen.has(String(x.version))));
-  if(all.length)setOfficialUpdates(all);
-}
-window.novaSyncOfficial=syncOfficial;
 
 /* ===== PAGE OFFICIELLE NOVA ===== */
 function renderNova(){
@@ -1497,8 +1328,6 @@ window.addEventListener('online',()=>{msgs.filter(m=>isTmp(m)&&m.statut==='echec
 
 async function marquerLu(){
   if(!cur||convByUser[String(cur.id)]===LOCAL_SELF_CONV)return;
-  /* Dans « Mes notes », mes propres messages ne sont pas des messages reçus. */
-  if(String(cur.id)===String(me.id))return;
   const inc=msgs.filter(m=>!isTmp(m)&&String(m.expediteur_id)===String(cur.id)&&m.statut!=='lu');
   if(!inc.length)return;
   const r=await supabaseClient.from('message_reads').upsert(inc.map(m=>({message_id:m.id,user_id:me.id})),{onConflict:'message_id,user_id',ignoreDuplicates:true});
@@ -1841,38 +1670,6 @@ async function voirStatut(a,i){
   const sv=$('sv');
   sv.style.display='flex';
   sv.innerHTML=`<div class="prog">${list.map((_,k)=>`<i><b style="width:${k<i?100:0}%" id="pb${k}"></b></i>`).join('')}</div>
-     return !r.error||/duplicate|unique/i.test(r.error.message||'');
-}
-
-async function voirStatut(a,i){
-  clearTimeout(svTimer);
-  if(i<0)i=0;
-  const list=groups[a];
-  if(!list)return fermerStatut();
-  if(i>=list.length){
-    const k=friendOrder.indexOf(a);
-    if(a!==String(me.id)&&k>=0&&k+1<friendOrder.length)return voirStatut(friendOrder[k+1],0);
-    return fermerStatut();
-  }
-  svA=a;svI=i;
-  const s=list[i];
-  const mine=a===String(me.id);
-  const u=mine?myU():(await getUsers([a]))[0];
-  if(!u)return fermerStatut();
-  let vu=parseArr(s.vu_par).map(String);
-  if(!mine&&!vu.includes(String(me.id))){
-    vu.push(String(me.id));
-    s.vu_par=vu;
-    marquerVuStatut(s);
-  }
-  const bg=s.photo?'':BGS[Math.max(0,Math.min(3,parseInt((s.legende||'bg:0').replace('bg:',''))||0))];
-  const rx=parseArr(s.reactions).map(x=>String(x).split('|'));
-  const my=rx.find(x=>x[0]===String(me.id));
-  const thumbsUp=rx.filter(x=>x[1]==='👍').length;
-  const thumbsDown=rx.filter(x=>x[1]==='👎').length;
-  const sv=$('sv');
-  sv.style.display='flex';
-  sv.innerHTML=`<div class="prog">${list.map((_,k)=>`<i><b style="width:${k<i?100:0}%" id="pb${k}"></b></i>`).join('')}</div>
   <div style="display:flex;align-items:center;gap:.6rem;padding:.4rem .9rem">${av(u,'sm')}<b style="flex:1;display:flex;align-items:center">${mine?'Moi':nameHtml(u)}<small style="opacity:.6;font-weight:400;margin-left:.5rem">${heure(s.date_publication)}</small></b><button class="ib" onclick="fermerStatut()">${icon('close')}</button></div>
   <div class="stage">${s.photo?`<img src="${esc(s.photo)}">`:`<div class="tbg" style="background:${bg}">${DECOR}<span>${esc(s.texte)}</span></div>`}${s.photo&&s.legende?`<div class="cap">${esc(s.legende)}</div>`:''}<div style="position:absolute;inset:0;display:flex"><div style="flex:1" onclick="voirStatut('${a}',${i-1})"></div><div style="flex:2" onclick="voirStatut('${a}',${i+1})"></div></div></div>
   ${mine
@@ -2056,11 +1853,8 @@ async function retirerBadge(){
 function renderLien(){$('lien-box').textContent=me.lien}
 function copierLien(){copyText(me.lien)}
 async function envoyerLien(){
-  /* Lien web cliquable (?id=CODE) quand l'application est hébergée en http(s). */
-  let web=me.lien;
-  try{if(/^https?:$/.test(location.protocol)&&me.code)web=location.origin+location.pathname+'?id='+encodeURIComponent(me.code)}catch(e){}
-  if(navigator.share){try{await navigator.share({title:'Nova',text:me.nom+' sur Nova',url:web})}catch(e){}}
-  else copyText(web);
+  if(navigator.share){try{await navigator.share({title:'Nova',text:me.nom+' sur Nova',url:me.lien})}catch(e){}}
+  else copyText(me.lien);
 }
 
 /* ===== NOVA AI : EDGE FUNCTION SUPABASE + OPENROUTER IMAGES ===== */
@@ -2368,10 +2162,6 @@ setInterval(()=>{
     chargerMessages().then(marquerLu).catch(()=>{});
   }
 },4000);
-/* Les annonces officielles se rafraîchissent aussi quand la page Nova est ouverte. */
-setInterval(()=>{
-  if(me&&currentPage==='nova'&&navigator.onLine&&!document.hidden)syncOfficial().catch(()=>{});
-},20000);
 
 /* ===== DÉMARRAGE ===== */
 function initApp(){
@@ -2384,8 +2174,6 @@ function initApp(){
   stack=[];
   showPage('discussions');
   refreshUnread();
-  syncOfficial().catch(e=>console.warn(e));
-  setTimeout(ouvrirLienEntrant,500);
 }
 async function restoreSession(){
   if(KEY_MISSING)return false;
@@ -2399,7 +2187,6 @@ async function restoreSession(){
   }catch(e){console.warn(e);return false}
 }
 function boot(){
-  pendingCodeFromUrl();
   applyTheme();applyContraste();icons();applyChatBg();
   changerTailleTexte(LS('nova_size')||'medium');
   $('loader-logo').innerHTML=STAR;
@@ -2421,7 +2208,5 @@ window.addEventListener('pageshow',e=>{
 });
 boot();
 </script>
-<!-- Module séparé des annonces officielles : chargé APRÈS l'application pour pouvoir utiliser window.supabaseClient -->
-<script src="update.official.js" onload="window.novaSyncOfficial&&window.novaSyncOfficial()" onerror="void 0"></script>
 </body>
-</html> 
+  </html>
